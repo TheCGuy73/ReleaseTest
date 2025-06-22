@@ -53,7 +53,10 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
-    _loadAppVersion();
+    _loadAppVersion().then((_) {
+      // Controlla aggiornamenti automaticamente all'avvio
+      _checkForUpdates(isAutomatic: true);
+    });
   }
 
   Future<void> _loadAppVersion() async {
@@ -125,11 +128,13 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  Future<void> _checkForUpdates() async {
-    setState(() {
-      _isCheckingUpdate = true;
-      _updateStatus = 'Controllo aggiornamenti...';
-    });
+  Future<void> _checkForUpdates({bool isAutomatic = false}) async {
+    if (!isAutomatic) {
+      setState(() {
+        _isCheckingUpdate = true;
+        _updateStatus = 'Controllo aggiornamenti...';
+      });
+    }
 
     try {
       final dio = Dio();
@@ -149,15 +154,17 @@ class _MyHomePageState extends State<MyHomePage> {
           final latestRelease = response.data;
           final latestVersion = latestRelease['tag_name'] ?? '';
 
-          setState(() {
-            _latestVersion = latestVersion;
-            _updateStatus = 'Ultima versione disponibile: $latestVersion';
-          });
+          if (!isAutomatic) {
+            setState(() {
+              _latestVersion = latestVersion;
+              _updateStatus = 'Ultima versione disponibile: $latestVersion';
+            });
+          }
 
           // Confronta le versioni
           if (_isNewerVersion(latestVersion, _appVersion)) {
             _showUpdateAvailableDialog(latestRelease);
-          } else {
+          } else if (!isAutomatic) {
             _showSnackBar('L\'app è già aggiornata!');
             setState(() {
               _updateStatus = 'App aggiornata alla versione più recente';
@@ -167,7 +174,8 @@ class _MyHomePageState extends State<MyHomePage> {
         }
       } catch (e) {
         // Se non ci sono release ufficiali, prova con le pre-release
-        print('Nessuna release ufficiale trovata, controllo pre-release...');
+        if (!isAutomatic)
+          print('Nessuna release ufficiale trovata, controllo pre-release...');
       }
 
       // Se non ci sono release ufficiali, ottieni tutte le release e prendi la più recente
@@ -185,20 +193,25 @@ class _MyHomePageState extends State<MyHomePage> {
 
           setState(() {
             _latestVersion = latestVersion;
-            _updateStatus =
-                'Ultima versione disponibile: $latestVersion (${latestRelease['prerelease'] ? 'Pre-release' : 'Release'})';
           });
+
+          if (!isAutomatic) {
+            setState(() {
+              _updateStatus =
+                  'Ultima versione disponibile: $latestVersion (${latestRelease['prerelease'] ? 'Pre-release' : 'Release'})';
+            });
+          }
 
           // Confronta le versioni
           if (_isNewerVersion(latestVersion, _appVersion)) {
             _showUpdateAvailableDialog(latestRelease);
-          } else {
+          } else if (!isAutomatic) {
             _showSnackBar('L\'app è già aggiornata!');
             setState(() {
               _updateStatus = 'App aggiornata alla versione più recente';
             });
           }
-        } else {
+        } else if (!isAutomatic) {
           setState(() {
             _updateStatus = 'Nessuna release trovata';
           });
@@ -206,14 +219,18 @@ class _MyHomePageState extends State<MyHomePage> {
         }
       }
     } catch (e) {
-      setState(() {
-        _updateStatus = 'Errore nel controllo aggiornamenti: $e';
-      });
-      _showSnackBar('Errore nel controllo aggiornamenti: $e');
+      if (!isAutomatic) {
+        setState(() {
+          _updateStatus = 'Errore nel controllo aggiornamenti: $e';
+        });
+        _showSnackBar('Errore nel controllo aggiornamenti: $e');
+      }
     } finally {
-      setState(() {
-        _isCheckingUpdate = false;
-      });
+      if (!isAutomatic) {
+        setState(() {
+          _isCheckingUpdate = false;
+        });
+      }
     }
   }
 
@@ -597,7 +614,7 @@ class _MyHomePageState extends State<MyHomePage> {
           PopupMenuButton<String>(
             onSelected: (value) {
               if (value == 'check_update') {
-                _checkForUpdates();
+                _checkForUpdates(isAutomatic: false);
               } else if (value == 'download_update') {
                 _downloadLatestUpdate();
               }
