@@ -158,9 +158,12 @@ class _MyHomePageState extends State<MyHomePage> {
           final latestRelease = response.data;
           final latestVersion = latestRelease['tag_name'] ?? '';
 
+          setState(() {
+            _latestVersion = latestVersion;
+          });
+
           if (!isAutomatic) {
             setState(() {
-              _latestVersion = latestVersion;
               _updateStatus = 'Ultima versione disponibile: $latestVersion';
             });
           }
