@@ -968,11 +968,11 @@ class _SleepCalculatorState extends State<SleepCalculator> {
             children: [
               ElevatedButton(
                 onPressed: _calculateBedTimes,
-                child: const Text('Devo dormire alle...'),
+                child: const Text('sonno'),
               ),
               ElevatedButton(
                 onPressed: _calculateWakeUpTimes,
-                child: const Text('Mi devo svegliare alle...'),
+                child: const Text('sveglia'),
               ),
             ],
           ),
