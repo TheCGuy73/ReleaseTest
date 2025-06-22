@@ -34,8 +34,16 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Sleep Calculator',
-      theme: ThemeData(),
-      darkTheme: ThemeData(),
+      theme: ThemeData(
+        brightness: Brightness.light,
+        colorSchemeSeed: Colors.blue,
+        useMaterial3: true,
+      ),
+      darkTheme: ThemeData(
+        brightness: Brightness.dark,
+        colorSchemeSeed: Colors.blue,
+        useMaterial3: true,
+      ),
       themeMode: _isDarkMode ? ThemeMode.dark : ThemeMode.light,
       home: MyHomePage(
         isDarkMode: _isDarkMode,
