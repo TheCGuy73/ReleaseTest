@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:installed_apps/installed_apps.dart';
 import 'update_service.dart';
-import 'alarm_service.dart';
+import 'package:android_intent_plus/android_intent.dart';
 
 void main() {
   // Assicura che i binding di Flutter siano inizializzati prima di eseguire l'app.
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Inizializza il servizio degli allarmi
-  AlarmService.initialize();
 
   runApp(const MyApp());
 }
@@ -573,51 +571,45 @@ class _SleepCalculatorState extends State<SleepCalculator> {
   }
 
   Future<void> _setAlarm(TimeOfDay time) async {
-    try {
-      // Richiedi i permessi per le notifiche
-      final hasPermission = await AlarmService.requestPermissions();
+    const clockAppPackage = 'com.google.android.deskclock';
+    final isInstalled = await InstalledApps.isAppInstalled(clockAppPackage);
 
-      if (!hasPermission) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Permessi per le notifiche non concessi'),
-          ),
-        );
-        return;
-      }
-
-      // Calcola la data per l'allarme
-      DateTime alarmTime = _timeOfDayToDateTime(time);
-
-      // Se l'orario è già passato oggi, imposta per domani
-      if (alarmTime.isBefore(DateTime.now())) {
-        alarmTime = alarmTime.add(const Duration(days: 1));
-      }
-
-      // Genera un ID unico per l'allarme
-      final alarmId = time.hour * 60 + time.minute;
-
-      // Imposta l'allarme
-      await AlarmService.scheduleAlarm(
-        id: alarmId,
-        scheduledTime: alarmTime,
-        title: 'Sveglia',
-        body:
-            'È ora di ${_calculationType == 'Sveglia' ? 'svegliarsi' : 'andare a dormire'}!',
+    if (isInstalled != true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              'Per impostare la sveglia è necessaria l\'app Google Orologio.'),
+        ),
       );
+      return;
+    }
 
+    final now = DateTime.now();
+    final alarmTime =
+        DateTime(now.year, now.month, now.day, time.hour, time.minute);
+
+    final intent = AndroidIntent(
+      action: 'android.intent.action.SET_ALARM',
+      arguments: <String, dynamic>{
+        'android.intent.extra.alarm.HOUR': time.hour,
+        'android.intent.extra.alarm.MINUTES': time.minute,
+        'android.intent.extra.alarm.MESSAGE': 'Sveglia da Sleep Calculator',
+        'android.intent.extra.alarm.SKIP_UI': false,
+      },
+    );
+
+    try {
+      await intent.launch();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Sveglia impostata per ${_formatTime(time)} del ${alarmTime.day}/${alarmTime.month}',
-          ),
+          content:
+              Text('Apertura di Google Orologio per impostare la sveglia...'),
         ),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content:
-              Text('Errore nell\'impostazione della sveglia: ${e.toString()}'),
+          content: Text('Impossibile aprire Google Orologio: ${e.toString()}'),
         ),
       );
     }
