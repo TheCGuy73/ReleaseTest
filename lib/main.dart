@@ -190,6 +190,7 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
               'Download: ${(_downloadProgress * 100).toStringAsFixed(1)}%';
         });
       });
+
       _updateStatus = 'Download completato. Avvio installazione...';
     } catch (e) {
       _updateStatus = 'Errore durante il download: ${e.toString()}';
@@ -293,6 +294,8 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
                       });
                     },
                   ),
+                  const SizedBox(height: 20),
+                  SleepCalculator(timeToCalculate: _selectedTime),
                   const SizedBox(height: 24),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20.0),
@@ -380,6 +383,133 @@ class TimePicker extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class SleepCalculator extends StatefulWidget {
+  final TimeOfDay timeToCalculate;
+
+  const SleepCalculator({super.key, required this.timeToCalculate});
+
+  @override
+  State<SleepCalculator> createState() => _SleepCalculatorState();
+}
+
+class _SleepCalculatorState extends State<SleepCalculator> {
+  List<TimeOfDay> _results = [];
+  String _calculationType = '';
+  final int _sleepCycleMinutes = 90;
+  final int _fallAsleepMinutes = 15;
+
+  void _calculateWakeUpTimes() {
+    setState(() {
+      _calculationType = 'Sveglia';
+      _results.clear();
+      DateTime bedTime = _timeOfDayToDateTime(widget.timeToCalculate);
+      DateTime fallAsleepTime =
+          bedTime.add(Duration(minutes: _fallAsleepMinutes));
+
+      for (int i = 6; i >= 3; i--) {
+        final wakeUpTime =
+            fallAsleepTime.add(Duration(minutes: _sleepCycleMinutes * i));
+        _results.add(TimeOfDay.fromDateTime(wakeUpTime));
+      }
+    });
+  }
+
+  void _calculateBedTimes() {
+    setState(() {
+      _calculationType = 'Dormire';
+      _results.clear();
+      DateTime wakeUpTime = _timeOfDayToDateTime(widget.timeToCalculate);
+
+      for (int i = 6; i >= 3; i--) {
+        final bedTime =
+            wakeUpTime.subtract(Duration(minutes: _sleepCycleMinutes * i));
+        _results.add(TimeOfDay.fromDateTime(bedTime));
+      }
+    });
+  }
+
+  DateTime _timeOfDayToDateTime(TimeOfDay time) {
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day, time.hour, time.minute);
+  }
+
+  String _formatTime(TimeOfDay time) {
+    final hour = time.hour.toString().padLeft(2, '0');
+    final minute = time.minute.toString().padLeft(2, '0');
+    return '$hour:$minute';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceVariant,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          const Text(
+            'Calcolatore del Sonno',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              ElevatedButton(
+                onPressed: _calculateBedTimes,
+                child: const Text('Sonno'),
+              ),
+              ElevatedButton(
+                onPressed: _calculateWakeUpTimes,
+                child: const Text('Sveglia'),
+              ),
+            ],
+          ),
+          if (_results.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 20.0),
+              child: Column(
+                children: [
+                  Text(
+                    _calculationType == 'Sveglia'
+                        ? 'Dovresti svegliarti in uno di questi orari:'
+                        : 'Dovresti andare a letto in uno di questi orari:',
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8.0,
+                    runSpacing: 8.0,
+                    alignment: WrapAlignment.center,
+                    children: _results.map((time) {
+                      return Chip(
+                        avatar: Icon(
+                          _calculationType == 'Sveglia'
+                              ? Icons.alarm_on
+                              : Icons.bedtime,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        label: Text(
+                          _formatTime(time),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );
