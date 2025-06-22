@@ -1,111 +1,109 @@
 # Release Test App
 
-Un'applicazione Flutter che dimostra come implementare l'aggiornamento automatico tramite GitHub Releases.
+A Flutter application that demonstrates how to implement automatic updates via GitHub Releases.
 
-## Funzionalità
+## Features
 
-- ✅ Visualizzazione della versione corrente dell'app
-- ✅ Controllo automatico degli aggiornamenti da GitHub
-- ✅ Download e installazione di nuovi APK
-- ✅ Interfaccia utente moderna con Material Design 3
-- ✅ Barra di progresso per il download
-- ✅ Gestione degli errori e stati di caricamento
+- ✅ Display the current app version
+- ✅ Automatic check for updates from GitHub
+- ✅ Download and install new APKs
+- ✅ Modern UI with Material Design 3
+- ✅ Download progress bar
+- ✅ Error handling and loading states
 
-## Configurazione
+## Configuration
 
-### 1. Modifica le variabili GitHub
+### 1. Modify GitHub variables
 
-Nel file `lib/main.dart`, modifica le seguenti variabili con i tuoi dati:
+In the `lib/update_service.dart` file, change the following variables with your data:
 
 ```dart
-final String _githubOwner = 'tuo-username';  // Il tuo username GitHub
-final String _githubRepo = 'release_test';   // Il nome del tuo repository
-final String _githubToken = '';              // Token GitHub (opzionale, per repo privati)
+_githubOwner = 'your-username';   // Your GitHub username
+_githubRepo = 'release_test';    // The name of your repository
 ```
 
-### 2. Crea una Release su GitHub
+### 2. Create a Release on GitHub
 
-1. Vai nel tuo repository GitHub
-2. Clicca su "Releases" nella barra laterale
-3. Clicca "Create a new release"
-4. Inserisci un tag (es. `v1.0.1`)
-5. Aggiungi una descrizione della release
-6. **Importante**: Carica il file APK nella sezione "Attachments"
-7. Pubblica la release
+1. Go to your GitHub repository
+2. Click on "Releases" in the sidebar
+3. Click "Create a new release"
+4. Enter a tag (e.g., `v1.0.1`)
+5. Add a description for the release
+6. **Important**: Upload the APK file in the "Attachments" section
+7. Publish the release
 
-### 3. Build dell'APK
+### 3. Build the APK
 
-Per creare un APK da distribuire:
+To create an APK for distribution:
 
 ```bash
 flutter build apk --release
 ```
 
-L'APK sarà disponibile in: `build/app/outputs/flutter-apk/app-release.apk`
+The APK will be available at: `build/app/outputs/flutter-apk/app-release.apk`
 
-## Come funziona
+## How it works
 
-1. **Controllo versione**: L'app confronta la versione corrente con l'ultima release su GitHub
-2. **Download**: Se è disponibile una versione più recente, l'app scarica l'APK
-3. **Installazione**: L'app apre l'installer di Android per installare il nuovo APK
+1.  **Version Check**: The app compares the current version with the latest release on GitHub
+2.  **Download**: If a newer version is available, the app downloads the APK
+3.  **Installation**: The app opens the Android installer to install the new APK
 
-## Permessi richiesti
+## Required Permissions
 
-L'app richiede i seguenti permessi Android:
-- `INTERNET`: Per scaricare gli aggiornamenti
-- `WRITE_EXTERNAL_STORAGE`: Per salvare l'APK scaricato
-- `READ_EXTERNAL_STORAGE`: Per accedere ai file scaricati
-- `REQUEST_INSTALL_PACKAGES`: Per installare nuovi APK
+The app requires the following Android permissions:
+- `INTERNET`: To download updates
+- `REQUEST_INSTALL_PACKAGES`: To install new APKs
 
-## Dipendenze
+## Dependencies
 
-- `package_info_plus`: Per ottenere la versione dell'app
-- `dio`: Per le richieste HTTP e download
-- `path_provider`: Per gestire i percorsi dei file
-- `permission_handler`: Per gestire i permessi Android
+- `package_info_plus`: To get the app version
+- `http`: For HTTP requests
+- `path_provider`: To manage file paths
+- `permission_handler`: To handle Android permissions
+- `open_file`: To open the downloaded APK for installation
 
-## Note importanti
+## Important Notes
 
-### Per repository privati
-Se il tuo repository è privato, dovrai:
-1. Creare un Personal Access Token su GitHub
-2. Inserirlo nella variabile `_githubToken`
+### For private repositories
+If your repository is private, you will need to:
+1. Create a Personal Access Token on GitHub with `repo` scope.
+2. The app is not currently configured to handle private repositories, you would need to modify the code to include the token in the request headers.
 
 ### Versioning
-- Usa il formato semantico per le versioni (es. `1.0.0`, `1.0.1`, `1.1.0`)
-- Il tag GitHub deve corrispondere alla versione nel `pubspec.yaml`
-- Per le release, usa il prefisso `v` (es. `v1.0.1`)
+- Use semantic versioning (e.g., `1.0.0`, `1.0.1`, `1.1.0`)
+- The GitHub tag must match the version in `pubspec.yaml`
+- For releases, use the `v` prefix (e.g., `v1.0.1`)
 
-### Sicurezza
-- Verifica sempre l'integrità degli APK scaricati
-- Considera l'implementazione di firme digitali per gli APK
-- Testa sempre gli aggiornamenti prima della distribuzione
+### Security
+- Always verify the integrity of downloaded APKs
+- Consider implementing digital signatures for APKs
+- Always test updates before distribution
 
 ## Troubleshooting
 
-### Errore "APK non trovato nella release"
-Assicurati di aver caricato un file `.apk` nella release GitHub.
+### Error "APK not found in release"
+Make sure you have uploaded an `.apk` file to the GitHub release.
 
-### Errore "Permessi di storage non concessi"
-L'utente deve concedere i permessi di storage quando richiesto dall'app.
+### Error "Storage permissions not granted"
+The user must grant storage permissions when requested by the app.
 
-### Errore "Errore nell'apertura del file APK"
-Su alcuni dispositivi Android, potrebbe essere necessario abilitare l'installazione da fonti sconosciute nelle impostazioni.
+### Error "Error opening APK file"
+On some Android devices, it may be necessary to enable installation from unknown sources in the settings.
 
-## Sviluppo
+## Development
 
-Per eseguire l'app in modalità sviluppo:
+To run the app in development mode:
 
 ```bash
 flutter run
 ```
 
-Per build di debug:
+For debug builds:
 
 ```bash
 flutter build apk --debug
 ```
 
-## Licenza
+## License
 
-Questo progetto è rilasciato sotto licenza MIT.
+This project is released under the MIT license.
