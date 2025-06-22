@@ -2,30 +2,58 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'update_service.dart';
+import 'alarm_service.dart';
 
 void main() {
   // Assicura che i binding di Flutter siano inizializzati prima di eseguire l'app.
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Inizializza il servizio degli allarmi
+  AlarmService.initialize();
+
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  bool _isDarkMode = false;
+
+  void _toggleTheme() {
+    setState(() {
+      _isDarkMode = !_isDarkMode;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Version App',
+      title: 'Sleep Calculator',
       theme: ThemeData(),
       darkTheme: ThemeData(),
-      themeMode: ThemeMode.system,
-      home: const MyHomePage(),
+      themeMode: _isDarkMode ? ThemeMode.dark : ThemeMode.light,
+      home: MyHomePage(
+        isDarkMode: _isDarkMode,
+        onThemeChanged: _toggleTheme,
+      ),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key});
+  final bool isDarkMode;
+  final VoidCallback onThemeChanged;
+
+  const MyHomePage({
+    super.key,
+    required this.isDarkMode,
+    required this.onThemeChanged,
+  });
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
@@ -248,6 +276,8 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
                 _showVersionInfo();
               } else if (value == 'check_update') {
                 _checkForUpdates();
+              } else if (value == 'toggle_theme') {
+                widget.onThemeChanged();
               }
             },
             itemBuilder: (BuildContext context) {
@@ -264,6 +294,20 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
                   child: ListTile(
                     leading: Icon(Icons.sync),
                     title: Text('Controlla Aggiornamenti'),
+                  ),
+                ),
+                PopupMenuItem<String>(
+                  value: 'toggle_theme',
+                  child: ListTile(
+                    leading: Icon(
+                        widget.isDarkMode ? Icons.light_mode : Icons.dark_mode),
+                    title: const Text('Tema Scuro'),
+                    trailing: Checkbox(
+                      value: widget.isDarkMode,
+                      onChanged: (value) {
+                        widget.onThemeChanged();
+                      },
+                    ),
                   ),
                 ),
               ];
@@ -444,6 +488,133 @@ class _SleepCalculatorState extends State<SleepCalculator> {
     return '$hour:$minute';
   }
 
+  Future<void> _showAlarmDialog() async {
+    if (_results.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Prima calcola gli orari!')),
+      );
+      return;
+    }
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Imposta Sveglia'),
+        content: const Text('Vuoi aggiungere una sveglia?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('No'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Sì'),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true) {
+      _showTimeSelectionDialog();
+    }
+  }
+
+  Future<void> _showTimeSelectionDialog() async {
+    final selectedTime = await showDialog<TimeOfDay>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Scegli Orario'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: _results.length,
+            itemBuilder: (context, index) {
+              final time = _results[index];
+              return ListTile(
+                leading: Icon(
+                  _calculationType == 'Sveglia'
+                      ? Icons.alarm_on
+                      : Icons.bedtime,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                title: Text(
+                  _formatTime(time),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                onTap: () => Navigator.of(context).pop(time),
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Annulla'),
+          ),
+        ],
+      ),
+    );
+
+    if (selectedTime != null) {
+      await _setAlarm(selectedTime);
+    }
+  }
+
+  Future<void> _setAlarm(TimeOfDay time) async {
+    try {
+      // Richiedi i permessi per le notifiche
+      final hasPermission = await AlarmService.requestPermissions();
+
+      if (!hasPermission) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Permessi per le notifiche non concessi'),
+          ),
+        );
+        return;
+      }
+
+      // Calcola la data per l'allarme
+      DateTime alarmTime = _timeOfDayToDateTime(time);
+
+      // Se l'orario è già passato oggi, imposta per domani
+      if (alarmTime.isBefore(DateTime.now())) {
+        alarmTime = alarmTime.add(const Duration(days: 1));
+      }
+
+      // Genera un ID unico per l'allarme
+      final alarmId = time.hour * 60 + time.minute;
+
+      // Imposta l'allarme
+      await AlarmService.scheduleAlarm(
+        id: alarmId,
+        scheduledTime: alarmTime,
+        title: 'Sveglia',
+        body:
+            'È ora di ${_calculationType == 'Sveglia' ? 'svegliarsi' : 'andare a dormire'}!',
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Sveglia impostata per ${_formatTime(time)} del ${alarmTime.day}/${alarmTime.month}',
+          ),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content:
+              Text('Errore nell\'impostazione della sveglia: ${e.toString()}'),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -472,7 +643,7 @@ class _SleepCalculatorState extends State<SleepCalculator> {
               ),
             ],
           ),
-          if (_results.isNotEmpty)
+          if (_results.isNotEmpty) ...[
             Padding(
               padding: const EdgeInsets.only(top: 20.0),
               child: Column(
@@ -506,9 +677,20 @@ class _SleepCalculatorState extends State<SleepCalculator> {
                       );
                     }).toList(),
                   ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: _showAlarmDialog,
+                    icon: const Icon(Icons.alarm_add),
+                    label: const Text('Imposta Sveglia'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                    ),
+                  ),
                 ],
               ),
             ),
+          ],
         ],
       ),
     );
