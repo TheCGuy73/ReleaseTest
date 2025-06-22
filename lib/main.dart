@@ -838,35 +838,6 @@ class _MyHomePageState extends State<MyHomePage> {
                     ),
                   ),
                 ),
-
-              const SizedBox(height: 20),
-
-              // Informazioni GitHub
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.surfaceVariant.withOpacity(0.5),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  children: [
-                    const Text(
-                      'Configurazione GitHub:',
-                      style: TextStyle(fontWeight: FontWeight.w500),
-                    ),
-                    const SizedBox(height: 4),
-                    Text('Repository: $_githubOwner/$_githubRepo'),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Nota: Modifica le variabili _githubOwner e _githubRepo nel codice per il tuo repository.',
-                      style: TextStyle(fontSize: 12),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
             ],
           ),
         ),
