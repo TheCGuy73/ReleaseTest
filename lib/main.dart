@@ -78,31 +78,71 @@ class _MyHomePageState extends State<MyHomePage> {
         dio.options.headers['Authorization'] = 'token $_githubToken';
       }
 
-      final response = await dio.get(
-        'https://api.github.com/repos/$_githubOwner/$_githubRepo/releases/latest',
+      // Prima prova a ottenere l'ultima release ufficiale
+      try {
+        final response = await dio.get(
+          'https://api.github.com/repos/$_githubOwner/$_githubRepo/releases/latest',
+        );
+
+        if (response.statusCode == 200) {
+          final latestRelease = response.data;
+          final latestVersion = latestRelease['tag_name'] ?? '';
+
+          setState(() {
+            _latestVersion = latestVersion;
+            _updateStatus = 'Ultima versione disponibile: $latestVersion';
+          });
+
+          // Confronta le versioni
+          if (_isNewerVersion(latestVersion, _appVersion)) {
+            _showUpdateDialog(latestRelease);
+          } else {
+            _showSnackBar('L\'app è già aggiornata!');
+          }
+          return;
+        }
+      } catch (e) {
+        // Se non ci sono release ufficiali, prova con le pre-release
+        print('Nessuna release ufficiale trovata, controllo pre-release...');
+      }
+
+      // Se non ci sono release ufficiali, ottieni tutte le release e prendi la più recente
+      final allReleasesResponse = await dio.get(
+        'https://api.github.com/repos/$_githubOwner/$_githubRepo/releases',
       );
 
-      if (response.statusCode == 200) {
-        final latestRelease = response.data;
-        final latestVersion = latestRelease['tag_name'] ?? '';
+      if (allReleasesResponse.statusCode == 200) {
+        final releases = allReleasesResponse.data as List<dynamic>;
 
-        setState(() {
-          _latestVersion = latestVersion;
-          _updateStatus = 'Ultima versione disponibile: $latestVersion';
-        });
+        if (releases.isNotEmpty) {
+          // Prendi la release più recente (prima nell'array)
+          final latestRelease = releases.first;
+          final latestVersion = latestRelease['tag_name'] ?? '';
 
-        // Confronta le versioni
-        if (_isNewerVersion(latestVersion, _appVersion)) {
-          _showUpdateDialog(latestRelease);
+          setState(() {
+            _latestVersion = latestVersion;
+            _updateStatus =
+                'Ultima versione disponibile: $latestVersion (${latestRelease['prerelease'] ? 'Pre-release' : 'Release'})';
+          });
+
+          // Confronta le versioni
+          if (_isNewerVersion(latestVersion, _appVersion)) {
+            _showUpdateDialog(latestRelease);
+          } else {
+            _showSnackBar('L\'app è già aggiornata!');
+          }
         } else {
-          _showSnackBar('L\'app è già aggiornata!');
+          setState(() {
+            _updateStatus = 'Nessuna release trovata';
+          });
+          _showSnackBar('Nessuna release trovata nel repository');
         }
       }
     } catch (e) {
       setState(() {
         _updateStatus = 'Errore nel controllo aggiornamenti: $e';
       });
-      _showSnackBar('Errore nel controllo aggiornamenti');
+      _showSnackBar('Errore nel controllo aggiornamenti: $e');
     } finally {
       setState(() {
         _isCheckingUpdate = false;
