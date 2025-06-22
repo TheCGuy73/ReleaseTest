@@ -730,173 +730,297 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         ],
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.start, // Allinea in alto
+          mainAxisAlignment: MainAxisAlignment.start,
           children: <Widget>[
-            // Selettore di tempo
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: Theme.of(context).colorScheme.outline,
-                  width: 1,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.shadow.withOpacity(0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+            TimePicker(
+              initialTime: _selectedTime,
+              onTimeChanged: (newTime) {
+                setState(() {
+                  _selectedTime = newTime;
+                });
+              },
+            ),
+            const SizedBox(height: 20),
+            SleepCalculator(timeToCalculate: _selectedTime),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class TimePicker extends StatelessWidget {
+  final TimeOfDay initialTime;
+  final ValueChanged<TimeOfDay> onTimeChanged;
+
+  const TimePicker({
+    super.key,
+    required this.initialTime,
+    required this.onTimeChanged,
+  });
+
+  Future<void> _selectTime(BuildContext context) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: initialTime,
+      builder: (context, child) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null && picked != initialTime) {
+      onTimeChanged(picked);
+    }
+  }
+
+  String _formatTime(TimeOfDay time) {
+    final hour = time.hour.toString().padLeft(2, '0');
+    final minute = time.minute.toString().padLeft(2, '0');
+    return '$hour:$minute';
+  }
+
+  String _getTimePeriod(TimeOfDay time) {
+    if (time.hour >= 5 && time.hour < 12) {
+      return 'Mattina';
+    } else if (time.hour >= 12 && time.hour < 18) {
+      return 'Pomeriggio';
+    } else if (time.hour >= 18 && time.hour < 22) {
+      return 'Sera';
+    } else {
+      return 'Notte';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceVariant,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Selettore Orario:',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
               ),
+              Icon(
+                Icons.access_time,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.schedule,
+                  color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  size: 24,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  _formatTime(initialTime),
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _getTimePeriod(initialTime),
+            style: TextStyle(
+              fontSize: 14,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            onPressed: () => _selectTime(context),
+            icon: const Icon(Icons.edit),
+            label: const Text('Cambia Orario'),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class SleepCalculator extends StatefulWidget {
+  final TimeOfDay timeToCalculate;
+
+  const SleepCalculator({super.key, required this.timeToCalculate});
+
+  @override
+  State<SleepCalculator> createState() => _SleepCalculatorState();
+}
+
+class _SleepCalculatorState extends State<SleepCalculator> {
+  List<TimeOfDay> _results = [];
+  String _calculationType = '';
+  final int _sleepCycleMinutes = 90;
+  final int _fallAsleepMinutes = 15;
+
+  void _calculateWakeUpTimes() {
+    setState(() {
+      _calculationType = 'Sveglia';
+      _results.clear();
+      DateTime bedTime = _timeOfDayToDateTime(widget.timeToCalculate);
+      DateTime fallAsleepTime = bedTime.add(
+        Duration(minutes: _fallAsleepMinutes),
+      );
+
+      for (int i = 6; i >= 3; i--) {
+        // Suggerisce orari per 6, 5, 4, 3 cicli di sonno
+        final wakeUpTime = fallAsleepTime.add(
+          Duration(minutes: _sleepCycleMinutes * i),
+        );
+        _results.add(TimeOfDay.fromDateTime(wakeUpTime));
+      }
+    });
+  }
+
+  void _calculateBedTimes() {
+    setState(() {
+      _calculationType = 'Dormire';
+      _results.clear();
+      DateTime wakeUpTime = _timeOfDayToDateTime(widget.timeToCalculate);
+
+      for (int i = 6; i >= 3; i--) {
+        // Suggerisce orari per 6, 5, 4, 3 cicli di sonno
+        final bedTime = wakeUpTime.subtract(
+          Duration(minutes: _sleepCycleMinutes * i),
+        );
+        _results.add(TimeOfDay.fromDateTime(bedTime));
+      }
+    });
+  }
+
+  DateTime _timeOfDayToDateTime(TimeOfDay time) {
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day, time.hour, time.minute);
+  }
+
+  String _formatTime(TimeOfDay time) {
+    final hour = time.hour.toString().padLeft(2, '0');
+    final minute = time.minute.toString().padLeft(2, '0');
+    return '$hour:$minute';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceVariant,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          const Text(
+            'Calcolatore del Sonno',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Usa l\'orario selezionato sopra e calcola i cicli di sonno.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 12,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              ElevatedButton(
+                onPressed: _calculateBedTimes,
+                child: const Text('Devo dormire alle...'),
+              ),
+              ElevatedButton(
+                onPressed: _calculateWakeUpTimes,
+                child: const Text('Mi devo svegliare alle...'),
+              ),
+            ],
+          ),
+          if (_results.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 20.0),
               child: Column(
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Selettore Orario:',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      Icon(
-                        Icons.access_time,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                    ],
+                  Text(
+                    _calculationType == 'Sveglia'
+                        ? 'Dovresti svegliarti in uno di questi orari:'
+                        : 'Dovresti andare a letto in uno di questi orari:',
+                    style: const TextStyle(fontWeight: FontWeight.w500),
                   ),
-                  const SizedBox(height: 16),
-
-                  // Display dell'orario selezionato
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 12,
-                      horizontal: 16,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primaryContainer,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.schedule,
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onPrimaryContainer,
-                          size: 24,
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8.0,
+                    runSpacing: 8.0,
+                    alignment: WrapAlignment.center,
+                    children: _results.map((time) {
+                      return Chip(
+                        avatar: Icon(
+                          _calculationType == 'Sveglia'
+                              ? Icons.alarm_on
+                              : Icons.bedtime,
+                          color: Theme.of(context).colorScheme.primary,
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          _formatTime(_selectedTime),
-                          style: TextStyle(
-                            fontSize: 24,
+                        label: Text(
+                          _formatTime(time),
+                          style: const TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onPrimaryContainer,
+                            fontSize: 16,
                           ),
                         ),
-                      ],
-                    ),
+                        backgroundColor: Theme.of(
+                          context,
+                        ).colorScheme.primaryContainer,
+                      );
+                    }).toList(),
                   ),
-
                   const SizedBox(height: 8),
-
-                  // Periodo del giorno
                   Text(
-                    _getTimePeriod(_selectedTime),
+                    'Per completare da 3 a 6 cicli di sonno completi.',
+                    textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 10,
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Bottone per aprire il selettore
-                  ElevatedButton.icon(
-                    onPressed: _isTimePickerOpen ? null : _selectTime,
-                    icon: _isTimePickerOpen
-                        ? SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Theme.of(context).colorScheme.onPrimary,
-                              ),
-                            ),
-                          )
-                        : const Icon(Icons.edit),
-                    label: Text(
-                      _isTimePickerOpen ? 'Apertura...' : 'Cambia Orario',
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 12,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
                     ),
                   ),
                 ],
               ),
             ),
-
-            const SizedBox(height: 20),
-
-            // Status aggiornamento
-            if (_updateStatus.isNotEmpty)
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: Theme.of(context).colorScheme.outline,
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    Text(
-                      _updateStatus,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
-                    if (_downloadProgress > 0 && _downloadProgress < 1)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8),
-                        child: LinearProgressIndicator(
-                          value: _downloadProgress,
-                          backgroundColor: Theme.of(
-                            context,
-                          ).colorScheme.surfaceVariant,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Theme.of(context).colorScheme.primary,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-          ],
-        ),
+        ],
       ),
     );
   }
