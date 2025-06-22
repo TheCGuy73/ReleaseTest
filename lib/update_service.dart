@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:open_filex/open_filex.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -29,7 +30,10 @@ class UpdateService {
   });
 
   /// Controlla la presenza di una nuova versione su GitHub.
-  Future<UpdateResult> checkForUpdates(String currentVersion) async {
+  Future<UpdateResult> checkForUpdates() async {
+    final packageInfo = await PackageInfo.fromPlatform();
+    final currentVersion = packageInfo.version;
+
     try {
       final dio = Dio();
       if (githubToken.isNotEmpty) {
@@ -58,7 +62,7 @@ class UpdateService {
       return UpdateResult(isUpdateAvailable: false);
     } catch (e) {
       print('Errore durante il controllo aggiornamenti: $e');
-      rethrow; // Rilancia l'eccezione per essere gestita dall'UI
+      rethrow;
     }
   }
 
@@ -78,21 +82,7 @@ class UpdateService {
       final fileName = apkAsset['name'];
 
       final dio = Dio();
-
-      Directory downloadDir;
-      if (Platform.isAndroid) {
-        try {
-          downloadDir = Directory('/storage/emulated/0/Download');
-          if (!await downloadDir.exists()) {
-            downloadDir = await getApplicationDocumentsDirectory();
-          }
-        } catch (e) {
-          downloadDir = await getApplicationDocumentsDirectory();
-        }
-      } else {
-        downloadDir = await getApplicationDocumentsDirectory();
-      }
-
+      final Directory downloadDir = await getApplicationDocumentsDirectory();
       final filePath = '${downloadDir.path}/$fileName';
 
       await dio.download(
@@ -105,7 +95,7 @@ class UpdateService {
         },
       );
 
-      _installApk(filePath);
+      await _installApk(filePath);
     } catch (e) {
       print('Errore durante il download: $e');
       rethrow;
@@ -114,75 +104,63 @@ class UpdateService {
 
   /// Avvia l'intent di sistema per installare un APK.
   Future<void> _installApk(String filePath) async {
-    if (Platform.isAndroid) {
-      try {
-        await Process.run('am', [
-          'start',
-          '-a',
-          'android.intent.action.VIEW',
-          '-d',
-          'file://$filePath',
-          '-t',
-          'application/vnd.android.package-archive',
-        ]);
-      } catch (e) {
-        print('Installazione fallita: $e');
-        rethrow;
+    if (!Platform.isAndroid) return;
+
+    try {
+      final result = await OpenFilex.open(filePath);
+      if (result.type != ResultType.done) {
+        throw Exception(
+          'Impossibile avviare l\'installazione: ${result.message}',
+        );
       }
+    } catch (e) {
+      print('Installazione fallita: $e');
+      rethrow;
     }
   }
 
   /// Confronta due stringhe di versione per determinare se 'latestVersion' è più recente.
   bool _isNewerVersion(String latestVersion, String currentVersion) {
-    print("--- INIZIO DEBUG AGGIORNAMENTO ---");
-    print("Ricevuta versione da GitHub: '$latestVersion'");
-    print("Ricevuta versione corrente: '$currentVersion'");
+    try {
+      var latest = latestVersion.startsWith('v')
+          ? latestVersion.substring(1)
+          : latestVersion;
+      var current = currentVersion;
 
-    var latest = latestVersion.startsWith('v')
-        ? latestVersion.substring(1)
-        : latestVersion;
-    var current = currentVersion;
+      List<String> latestParts = latest.split('+');
+      String latestSemver = latestParts[0];
+      int latestBuild =
+          latestParts.length > 1 ? int.tryParse(latestParts[1]) ?? 0 : 0;
 
-    List<String> latestParts = latest.split('+');
-    String latestSemver = latestParts[0];
-    int latestBuild =
-        latestParts.length > 1 ? int.tryParse(latestParts[1]) ?? 0 : 0;
+      List<String> currentParts = current.split('+');
+      String currentSemver = currentParts[0];
+      int currentBuild =
+          currentParts.length > 1 ? int.tryParse(currentParts[1]) ?? 0 : 0;
 
-    List<String> currentParts = current.split('+');
-    String currentSemver = currentParts[0];
-    int currentBuild =
-        currentParts.length > 1 ? int.tryParse(currentParts[1]) ?? 0 : 0;
+      latestSemver = latestSemver.split('-')[0];
+      currentSemver = currentSemver.split('-')[0];
 
-    print(
-        "Confronto SemVer: '$latestSemver' (GitHub) vs '$currentSemver' (App)");
-    print("Confronto Build: '$latestBuild' (GitHub) vs '$currentBuild' (App)");
+      List<int> latestSemverParts =
+          latestSemver.split('.').map((p) => int.tryParse(p) ?? 0).toList();
+      List<int> currentSemverParts =
+          currentSemver.split('.').map((p) => int.tryParse(p) ?? 0).toList();
 
-    List<int> latestSemverParts =
-        latestSemver.split('.').map(int.parse).toList();
-    List<int> currentSemverParts =
-        currentSemver.split('.').map(int.parse).toList();
-
-    while (latestSemverParts.length < currentSemverParts.length)
-      latestSemverParts.add(0);
-    while (currentSemverParts.length < latestSemverParts.length)
-      currentSemverParts.add(0);
-
-    for (int i = 0; i < latestSemverParts.length; i++) {
-      if (latestSemverParts[i] > currentSemverParts[i]) {
-        print("RISULTATO: VERO (major/minor/patch è maggiore)");
-        print("--- FINE DEBUG ---");
-        return true;
+      while (latestSemverParts.length < currentSemverParts.length) {
+        latestSemverParts.add(0);
       }
-      if (latestSemverParts[i] < currentSemverParts[i]) {
-        print("RISULTATO: FALSO (major/minor/patch è minore)");
-        print("--- FINE DEBUG ---");
-        return false;
+      while (currentSemverParts.length < latestSemverParts.length) {
+        currentSemverParts.add(0);
       }
+
+      for (int i = 0; i < latestSemverParts.length; i++) {
+        if (latestSemverParts[i] > currentSemverParts[i]) return true;
+        if (latestSemverParts[i] < currentSemverParts[i]) return false;
+      }
+
+      return latestBuild > currentBuild;
+    } catch (e) {
+      print("Errore durante il parsing delle versioni: $e");
+      return false;
     }
-
-    bool isNewer = latestBuild > currentBuild;
-    print("RISULTATO: $isNewer (basato sul build number)");
-    print("--- FINE DEBUG ---");
-    return isNewer;
   }
 }
