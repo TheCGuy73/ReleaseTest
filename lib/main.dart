@@ -592,6 +592,68 @@ class _MyHomePageState extends State<MyHomePage> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: const Text('Release Test App'),
         centerTitle: true,
+        actions: [
+          // Menu a tendina per gli aggiornamenti
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'check_update') {
+                _checkForUpdates();
+              } else if (value == 'download_update') {
+                _downloadLatestUpdate();
+              }
+            },
+            itemBuilder: (BuildContext context) {
+              return [
+                // Opzione per controllare gli aggiornamenti
+                PopupMenuItem<String>(
+                  value: 'check_update',
+                  enabled: !_isCheckingUpdate && !_isUpdating,
+                  child: ListTile(
+                    leading: _isCheckingUpdate
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.search),
+                    title: Text(
+                      _isCheckingUpdate
+                          ? 'Controllo...'
+                          : 'Controlla Aggiornamenti',
+                    ),
+                  ),
+                ),
+
+                // Opzione per scaricare l'aggiornamento, se disponibile
+                if (_latestVersion.isNotEmpty &&
+                    _isNewerVersion(_latestVersion, _appVersion))
+                  PopupMenuItem<String>(
+                    value: 'download_update',
+                    enabled: !_isUpdating,
+                    child: ListTile(
+                      leading: _isUpdating
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.download, color: Colors.green),
+                      title: Text(
+                        _isUpdating
+                            ? 'Download...'
+                            : 'Scarica v$_latestVersion',
+                        style: const TextStyle(
+                          color: Colors.green,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+              ];
+            },
+            icon: const Icon(Icons.system_update),
+          ),
+        ],
       ),
       body: Center(
         child: Padding(
@@ -792,88 +854,6 @@ class _MyHomePageState extends State<MyHomePage> {
                           ),
                         ),
                     ],
-                  ),
-                ),
-
-              const SizedBox(height: 40),
-
-              // Bottone di aggiornamento
-              ElevatedButton.icon(
-                onPressed: _isCheckingUpdate || _isUpdating
-                    ? null
-                    : _checkForUpdates,
-                icon: _isCheckingUpdate || _isUpdating
-                    ? SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Theme.of(context).colorScheme.onPrimary,
-                          ),
-                        ),
-                      )
-                    : const Icon(Icons.search),
-                label: Text(
-                  _isCheckingUpdate
-                      ? 'Controllo in corso...'
-                      : _isUpdating
-                      ? 'Aggiornamento...'
-                      : 'Controlla Aggiornamenti',
-                ),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 16,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-
-              // Bottone per scaricare aggiornamento se disponibile
-              if (_latestVersion.isNotEmpty &&
-                  _isNewerVersion(_latestVersion, _appVersion))
-                Padding(
-                  padding: const EdgeInsets.only(top: 16),
-                  child: ElevatedButton.icon(
-                    onPressed: _isUpdating
-                        ? null
-                        : () {
-                            // Trova la release corrispondente e scaricala
-                            _downloadLatestUpdate();
-                          },
-                    icon: _isUpdating
-                        ? SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Theme.of(context).colorScheme.onPrimary,
-                              ),
-                            ),
-                          )
-                        : const Icon(Icons.download),
-                    label: Text(
-                      _isUpdating
-                          ? 'Download in corso...'
-                          : 'Scarica Versione $_latestVersion',
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.secondary,
-                      foregroundColor: Theme.of(
-                        context,
-                      ).colorScheme.onSecondary,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 16,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
                   ),
                 ),
             ],
