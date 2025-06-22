@@ -655,209 +655,172 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         ],
       ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              // Versione dell'app
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceVariant,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Theme.of(context).colorScheme.outline,
-                    width: 1,
-                  ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start, // Allinea in alto
+          children: <Widget>[
+            // Selettore di tempo
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.outline,
+                  width: 1,
                 ),
-                child: Column(
-                  children: [
-                    const Text(
-                      'Versione App:',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
+                boxShadow: [
+                  BoxShadow(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.shadow.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Selettore Orario:',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _appVersion,
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+                      Icon(
+                        Icons.access_time,
                         color: Theme.of(context).colorScheme.primary,
                       ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              // Selettore di tempo
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Theme.of(context).colorScheme.outline,
-                    width: 1,
+                    ],
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.shadow.withOpacity(0.1),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Selettore Orario:',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        Icon(
-                          Icons.access_time,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
-                    // Display dell'orario selezionato
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 12,
-                        horizontal: 16,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.schedule,
+                  // Display dell'orario selezionato
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 16,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.schedule,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onPrimaryContainer,
+                          size: 24,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          _formatTime(_selectedTime),
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
                             color: Theme.of(
                               context,
                             ).colorScheme.onPrimaryContainer,
-                            size: 24,
                           ),
-                          const SizedBox(width: 8),
-                          Text(
-                            _formatTime(_selectedTime),
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onPrimaryContainer,
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  // Periodo del giorno
+                  Text(
+                    _getTimePeriod(_selectedTime),
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Bottone per aprire il selettore
+                  ElevatedButton.icon(
+                    onPressed: _isTimePickerOpen ? null : _selectTime,
+                    icon: _isTimePickerOpen
+                        ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Theme.of(context).colorScheme.onPrimary,
+                              ),
                             ),
-                          ),
-                        ],
+                          )
+                        : const Icon(Icons.edit),
+                    label: Text(
+                      _isTimePickerOpen ? 'Apertura...' : 'Cambia Orario',
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
                       ),
                     ),
+                  ),
+                ],
+              ),
+            ),
 
-                    const SizedBox(height: 8),
+            const SizedBox(height: 20),
 
-                    // Periodo del giorno
+            // Status aggiornamento
+            if (_updateStatus.isNotEmpty)
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
+                ),
+                child: Column(
+                  children: [
                     Text(
-                      _getTimePeriod(_selectedTime),
+                      _updateStatus,
+                      textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 14,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        fontStyle: FontStyle.italic,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
-
-                    const SizedBox(height: 16),
-
-                    // Bottone per aprire il selettore
-                    ElevatedButton.icon(
-                      onPressed: _isTimePickerOpen ? null : _selectTime,
-                      icon: _isTimePickerOpen
-                          ? SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  Theme.of(context).colorScheme.onPrimary,
-                                ),
-                              ),
-                            )
-                          : const Icon(Icons.edit),
-                      label: Text(
-                        _isTimePickerOpen ? 'Apertura...' : 'Cambia Orario',
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 12,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                    if (_downloadProgress > 0 && _downloadProgress < 1)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: LinearProgressIndicator(
+                          value: _downloadProgress,
+                          backgroundColor: Theme.of(
+                            context,
+                          ).colorScheme.surfaceVariant,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Theme.of(context).colorScheme.primary,
+                          ),
                         ),
                       ),
-                    ),
                   ],
                 ),
               ),
-
-              const SizedBox(height: 20),
-
-              // Status aggiornamento
-              if (_updateStatus.isNotEmpty)
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: Theme.of(context).colorScheme.outline,
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        _updateStatus,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
-                      ),
-                      if (_downloadProgress > 0 && _downloadProgress < 1)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 8),
-                          child: LinearProgressIndicator(
-                            value: _downloadProgress,
-                            backgroundColor: Theme.of(
-                              context,
-                            ).colorScheme.surfaceVariant,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Theme.of(context).colorScheme.primary,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-            ],
-          ),
+          ],
         ),
       ),
     );
