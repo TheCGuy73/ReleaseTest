@@ -156,9 +156,12 @@ class _MyHomePageState extends State<MyHomePage> {
 
           // Confronta le versioni
           if (_isNewerVersion(latestVersion, _appVersion)) {
-            _showUpdateDialog(latestRelease);
+            _showUpdateAvailableDialog(latestRelease);
           } else {
             _showSnackBar('L\'app è già aggiornata!');
+            setState(() {
+              _updateStatus = 'App aggiornata alla versione più recente';
+            });
           }
           return;
         }
@@ -188,9 +191,12 @@ class _MyHomePageState extends State<MyHomePage> {
 
           // Confronta le versioni
           if (_isNewerVersion(latestVersion, _appVersion)) {
-            _showUpdateDialog(latestRelease);
+            _showUpdateAvailableDialog(latestRelease);
           } else {
             _showSnackBar('L\'app è già aggiornata!');
+            setState(() {
+              _updateStatus = 'App aggiornata alla versione più recente';
+            });
           }
         } else {
           setState(() {
@@ -231,12 +237,12 @@ class _MyHomePageState extends State<MyHomePage> {
     return false;
   }
 
-  void _showUpdateDialog(Map<String, dynamic> release) {
+  void _showUpdateAvailableDialog(Map<String, dynamic> release) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Aggiornamento disponibile'),
+          title: const Text('Aggiornamento Disponibile'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -245,20 +251,61 @@ class _MyHomePageState extends State<MyHomePage> {
               const SizedBox(height: 8),
               Text('Nuova versione: ${release['tag_name']}'),
               const SizedBox(height: 16),
+              Text(
+                'Descrizione:',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+              const SizedBox(height: 4),
               Text(release['body'] ?? 'Nessuna descrizione disponibile'),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceVariant,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      color: Theme.of(context).colorScheme.primary,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Vuoi scaricare e installare questo aggiornamento?',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () {
+                Navigator.of(context).pop();
+                setState(() {
+                  _updateStatus = 'Aggiornamento disponibile ma non installato';
+                });
+              },
               child: const Text('Annulla'),
             ),
-            ElevatedButton(
+            ElevatedButton.icon(
               onPressed: () {
                 Navigator.of(context).pop();
                 _downloadAndInstallUpdate(release);
               },
-              child: const Text('Aggiorna'),
+              icon: const Icon(Icons.download),
+              label: const Text('Scarica e Installa'),
             ),
           ],
         );
@@ -463,6 +510,41 @@ class _MyHomePageState extends State<MyHomePage> {
     }
 
     return hasStoragePermission;
+  }
+
+  Future<void> _downloadLatestUpdate() async {
+    try {
+      final dio = Dio();
+
+      // Aggiungi token se necessario
+      if (_githubToken.isNotEmpty) {
+        dio.options.headers['Authorization'] = 'token $_githubToken';
+      }
+
+      // Ottieni la release più recente
+      final response = await dio.get(
+        'https://api.github.com/repos/$_githubOwner/$_githubRepo/releases/latest',
+      );
+
+      if (response.statusCode == 200) {
+        final latestRelease = response.data;
+        await _downloadAndInstallUpdate(latestRelease);
+      } else {
+        // Fallback: ottieni tutte le release
+        final allReleasesResponse = await dio.get(
+          'https://api.github.com/repos/$_githubOwner/$_githubRepo/releases',
+        );
+
+        if (allReleasesResponse.statusCode == 200) {
+          final releases = allReleasesResponse.data as List<dynamic>;
+          if (releases.isNotEmpty) {
+            await _downloadAndInstallUpdate(releases.first);
+          }
+        }
+      }
+    } catch (e) {
+      _showSnackBar('Errore nel recupero della release: $e');
+    }
   }
 
   @override
@@ -693,10 +775,10 @@ class _MyHomePageState extends State<MyHomePage> {
                           ),
                         ),
                       )
-                    : const Icon(Icons.system_update),
+                    : const Icon(Icons.search),
                 label: Text(
                   _isCheckingUpdate
-                      ? 'Controllo...'
+                      ? 'Controllo in corso...'
                       : _isUpdating
                       ? 'Aggiornamento...'
                       : 'Controlla Aggiornamenti',
@@ -711,6 +793,51 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                 ),
               ),
+
+              // Bottone per scaricare aggiornamento se disponibile
+              if (_latestVersion.isNotEmpty &&
+                  _isNewerVersion(_latestVersion, _appVersion))
+                Padding(
+                  padding: const EdgeInsets.only(top: 16),
+                  child: ElevatedButton.icon(
+                    onPressed: _isUpdating
+                        ? null
+                        : () {
+                            // Trova la release corrispondente e scaricala
+                            _downloadLatestUpdate();
+                          },
+                    icon: _isUpdating
+                        ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Theme.of(context).colorScheme.onPrimary,
+                              ),
+                            ),
+                          )
+                        : const Icon(Icons.download),
+                    label: Text(
+                      _isUpdating
+                          ? 'Download in corso...'
+                          : 'Scarica Versione $_latestVersion',
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.secondary,
+                      foregroundColor: Theme.of(
+                        context,
+                      ).colorScheme.onSecondary,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 16,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
 
               const SizedBox(height: 20),
 
