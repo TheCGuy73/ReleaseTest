@@ -134,6 +134,10 @@ class UpdateService {
 
   /// Confronta due stringhe di versione per determinare se 'latestVersion' è più recente.
   bool _isNewerVersion(String latestVersion, String currentVersion) {
+    print("--- INIZIO DEBUG AGGIORNAMENTO ---");
+    print("Ricevuta versione da GitHub: '$latestVersion'");
+    print("Ricevuta versione corrente: '$currentVersion'");
+
     var latest = latestVersion.startsWith('v')
         ? latestVersion.substring(1)
         : latestVersion;
@@ -141,24 +145,22 @@ class UpdateService {
 
     List<String> latestParts = latest.split('+');
     String latestSemver = latestParts[0];
-    int latestBuild = latestParts.length > 1
-        ? int.tryParse(latestParts[1]) ?? 0
-        : 0;
+    int latestBuild =
+        latestParts.length > 1 ? int.tryParse(latestParts[1]) ?? 0 : 0;
 
     List<String> currentParts = current.split('+');
     String currentSemver = currentParts[0];
-    int currentBuild = currentParts.length > 1
-        ? int.tryParse(currentParts[1]) ?? 0
-        : 0;
+    int currentBuild =
+        currentParts.length > 1 ? int.tryParse(currentParts[1]) ?? 0 : 0;
 
-    List<int> latestSemverParts = latestSemver
-        .split('.')
-        .map(int.parse)
-        .toList();
-    List<int> currentSemverParts = currentSemver
-        .split('.')
-        .map(int.parse)
-        .toList();
+    print(
+        "Confronto SemVer: '$latestSemver' (GitHub) vs '$currentSemver' (App)");
+    print("Confronto Build: '$latestBuild' (GitHub) vs '$currentBuild' (App)");
+
+    List<int> latestSemverParts =
+        latestSemver.split('.').map(int.parse).toList();
+    List<int> currentSemverParts =
+        currentSemver.split('.').map(int.parse).toList();
 
     while (latestSemverParts.length < currentSemverParts.length)
       latestSemverParts.add(0);
@@ -166,10 +168,21 @@ class UpdateService {
       currentSemverParts.add(0);
 
     for (int i = 0; i < latestSemverParts.length; i++) {
-      if (latestSemverParts[i] > currentSemverParts[i]) return true;
-      if (latestSemverParts[i] < currentSemverParts[i]) return false;
+      if (latestSemverParts[i] > currentSemverParts[i]) {
+        print("RISULTATO: VERO (major/minor/patch è maggiore)");
+        print("--- FINE DEBUG ---");
+        return true;
+      }
+      if (latestSemverParts[i] < currentSemverParts[i]) {
+        print("RISULTATO: FALSO (major/minor/patch è minore)");
+        print("--- FINE DEBUG ---");
+        return false;
+      }
     }
 
-    return latestBuild > currentBuild;
+    bool isNewer = latestBuild > currentBuild;
+    print("RISULTATO: $isNewer (basato sul build number)");
+    print("--- FINE DEBUG ---");
+    return isNewer;
   }
 }
