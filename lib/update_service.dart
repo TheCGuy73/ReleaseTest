@@ -82,7 +82,7 @@ class UpdateService {
       final fileName = apkAsset['name'];
 
       final dio = Dio();
-      final Directory downloadDir = await getApplicationDocumentsDirectory();
+      final Directory downloadDir = await getApplicationSupportDirectory();
       final filePath = '${downloadDir.path}/$fileName';
 
       await dio.download(

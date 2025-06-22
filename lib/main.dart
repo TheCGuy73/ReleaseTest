@@ -282,13 +282,33 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
                   Text(_updateStatus),
                 ],
               )
-            : TimePicker(
-                initialTime: _selectedTime,
-                onTimeChanged: (newTime) {
-                  setState(() {
-                    _selectedTime = newTime;
-                  });
-                },
+            : Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TimePicker(
+                    initialTime: _selectedTime,
+                    onTimeChanged: (newTime) {
+                      setState(() {
+                        _selectedTime = newTime;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                    child: Text(
+                      'Tutte le funzionalità qui presenti sono in fase di testing, usale con cautela, a tuo rischio',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontStyle: FontStyle.italic,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.7),
+                      ),
+                    ),
+                  ),
+                ],
               ),
       ),
     );
