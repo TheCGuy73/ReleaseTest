@@ -218,22 +218,60 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   bool _isNewerVersion(String latestVersion, String currentVersion) {
-    // Logica semplice per confrontare le versioni
+    print('Controllo nuova versione...');
+    print('Versione GitHub: $latestVersion');
+    print('Versione App: $currentVersion');
+
     // Rimuovi il prefisso 'v' se presente
-    latestVersion = latestVersion.replaceAll('v', '');
-    currentVersion = currentVersion.split('+')[0]; // Rimuovi il build number
-
-    final latest = latestVersion.split('.');
-    final current = currentVersion.split('.');
-
-    for (int i = 0; i < 3; i++) {
-      final latestNum = i < latest.length ? int.tryParse(latest[i]) ?? 0 : 0;
-      final currentNum = i < current.length ? int.tryParse(current[i]) ?? 0 : 0;
-
-      if (latestNum > currentNum) return true;
-      if (latestNum < currentNum) return false;
+    if (latestVersion.startsWith('v')) {
+      latestVersion = latestVersion.substring(1);
     }
 
+    // Separa versione e build number
+    List<String> latestParts = latestVersion.split('+');
+    String latestSemver = latestParts[0];
+    int latestBuild = latestParts.length > 1
+        ? int.tryParse(latestParts[1]) ?? 0
+        : 0;
+
+    List<String> currentParts = currentVersion.split('+');
+    String currentSemver = currentParts[0];
+    int currentBuild = currentParts.length > 1
+        ? int.tryParse(currentParts[1]) ?? 0
+        : 0;
+
+    print('-> Versione GitHub analizzata: $latestSemver, build: $latestBuild');
+    print('-> Versione App analizzata: $currentSemver, build: $currentBuild');
+
+    // Confronta la parte semver (major.minor.patch)
+    List<String> latestSemverParts = latestSemver.split('.');
+    List<String> currentSemverParts = currentSemver.split('.');
+
+    for (int i = 0; i < 3; i++) {
+      int latestNum = i < latestSemverParts.length
+          ? int.tryParse(latestSemverParts[i]) ?? 0
+          : 0;
+      int currentNum = i < currentSemverParts.length
+          ? int.tryParse(currentSemverParts[i]) ?? 0
+          : 0;
+
+      if (latestNum > currentNum) {
+        print('Nuova versione trovata (semver)');
+        return true;
+      }
+      if (latestNum < currentNum) {
+        print('Versione attuale più recente (semver)');
+        return false;
+      }
+    }
+
+    // Se la parte semver è identica, confronta il build number
+    if (latestBuild > currentBuild) {
+      print('Nuova versione trovata (build number)');
+      return true;
+    }
+
+    print('Nessuna nuova versione trovata');
     return false;
   }
 
