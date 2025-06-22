@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:io';
+import 'package:app_settings/app_settings.dart';
 
 void main() {
   runApp(const MyApp());
@@ -215,9 +216,13 @@ class _MyHomePageState extends State<MyHomePage> {
     try {
       // Richiedi permessi per Android
       if (Platform.isAndroid) {
-        final status = await Permission.storage.request();
-        if (!status.isGranted) {
-          throw Exception('Permessi di storage non concessi');
+        bool hasPermissions = await _requestStoragePermissions();
+        if (!hasPermissions) {
+          setState(() {
+            _isUpdating = false;
+            _updateStatus = 'Permessi di storage non concessi';
+          });
+          return;
         }
       }
 
@@ -237,8 +242,24 @@ class _MyHomePageState extends State<MyHomePage> {
 
       // Scarica il file
       final dio = Dio();
-      final directory = await getApplicationDocumentsDirectory();
-      final filePath = '${directory.path}/$fileName';
+
+      // Scegli il directory appropriato per il download
+      Directory downloadDir;
+      if (Platform.isAndroid) {
+        // Prova prima il directory pubblico dei download
+        try {
+          downloadDir = Directory('/storage/emulated/0/Download');
+          if (!await downloadDir.exists()) {
+            downloadDir = await getApplicationDocumentsDirectory();
+          }
+        } catch (e) {
+          downloadDir = await getApplicationDocumentsDirectory();
+        }
+      } else {
+        downloadDir = await getApplicationDocumentsDirectory();
+      }
+
+      final filePath = '${downloadDir.path}/$fileName';
 
       await dio.download(
         downloadUrl,
@@ -260,21 +281,33 @@ class _MyHomePageState extends State<MyHomePage> {
 
       // Installa l'APK
       if (Platform.isAndroid) {
-        // Per Android, apri il file per l'installazione
-        final result = await Process.run('am', [
-          'start',
-          '-a',
-          'android.intent.action.VIEW',
-          '-d',
-          'file://$filePath',
-          '-t',
-          'application/vnd.android.package-archive',
-        ]);
+        try {
+          // Prova a usare l'intent per aprire il file APK
+          final result = await Process.run('am', [
+            'start',
+            '-a',
+            'android.intent.action.VIEW',
+            '-d',
+            'file://$filePath',
+            '-t',
+            'application/vnd.android.package-archive',
+          ]);
 
-        if (result.exitCode == 0) {
-          _showSnackBar('APK scaricato. Apri il file per installare.');
-        } else {
-          throw Exception('Errore nell\'apertura del file APK');
+          if (result.exitCode == 0) {
+            _showSnackBar(
+              'APK scaricato in: $filePath\nApri il file per installare.',
+            );
+          } else {
+            // Fallback: mostra il percorso del file
+            _showSnackBar(
+              'APK scaricato in: $filePath\nApri manualmente il file per installare.',
+            );
+          }
+        } catch (e) {
+          // Se fallisce, mostra il percorso del file
+          _showSnackBar(
+            'APK scaricato in: $filePath\nApri manualmente il file per installare.',
+          );
         }
       }
     } catch (e) {
@@ -294,6 +327,82 @@ class _MyHomePageState extends State<MyHomePage> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<bool> _requestStoragePermissions() async {
+    if (!Platform.isAndroid) return true;
+
+    // Mostra dialog informativo prima di richiedere i permessi
+    bool shouldRequest =
+        await showDialog<bool>(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Permessi Richiesti'),
+              content: const Text(
+                'L\'app ha bisogno dei permessi di storage per scaricare e installare gli aggiornamenti. '
+                'Vuoi concedere questi permessi?',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Annulla'),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Concedi Permessi'),
+                ),
+              ],
+            );
+          },
+        ) ??
+        false;
+
+    if (!shouldRequest) return false;
+
+    // Richiedi i permessi
+    Map<Permission, PermissionStatus> statuses = await [
+      Permission.storage,
+      Permission.manageExternalStorage,
+    ].request();
+
+    bool hasStoragePermission =
+        statuses[Permission.storage]?.isGranted == true ||
+        statuses[Permission.manageExternalStorage]?.isGranted == true;
+
+    if (!hasStoragePermission) {
+      // Mostra dialog per aprire le impostazioni
+      bool openSettings =
+          await showDialog<bool>(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text('Permessi Negati'),
+                content: const Text(
+                  'I permessi di storage sono necessari per scaricare gli aggiornamenti. '
+                  'Vuoi aprire le impostazioni per concederli manualmente?',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    child: const Text('Annulla'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(true),
+                    child: const Text('Apri Impostazioni'),
+                  ),
+                ],
+              );
+            },
+          ) ??
+          false;
+
+      if (openSettings) {
+        await openAppSettings();
+      }
+    }
+
+    return hasStoragePermission;
   }
 
   @override
