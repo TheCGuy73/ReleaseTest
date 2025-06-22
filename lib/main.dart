@@ -41,6 +41,10 @@ class _MyHomePageState extends State<MyHomePage> {
   String _updateStatus = '';
   double _downloadProgress = 0.0;
 
+  // Variabili per il selettore di tempo
+  TimeOfDay _selectedTime = TimeOfDay.now();
+  bool _isTimePickerOpen = false;
+
   // Configurazione GitHub - Sostituisci con i tuoi dati
   final String _githubOwner = 'TheCGuy73';
   final String _githubRepo = 'ReleaseTest';
@@ -62,6 +66,62 @@ class _MyHomePageState extends State<MyHomePage> {
       setState(() {
         _appVersion = 'Errore nel caricamento della versione';
       });
+    }
+  }
+
+  // Metodo per aprire il selettore di tempo
+  Future<void> _selectTime() async {
+    setState(() {
+      _isTimePickerOpen = true;
+    });
+
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: _selectedTime,
+      builder: (BuildContext context, Widget? child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            timePickerTheme: TimePickerThemeData(
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              hourMinuteTextColor: Theme.of(context).colorScheme.primary,
+              hourMinuteColor: Theme.of(context).colorScheme.surfaceVariant,
+              dialBackgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+              dialHandColor: Theme.of(context).colorScheme.primary,
+              dialTextColor: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    setState(() {
+      _isTimePickerOpen = false;
+    });
+
+    if (picked != null && picked != _selectedTime) {
+      setState(() {
+        _selectedTime = picked;
+      });
+      _showSnackBar('Orario selezionato: ${_formatTime(_selectedTime)}');
+    }
+  }
+
+  // Metodo per formattare l'orario
+  String _formatTime(TimeOfDay time) {
+    final hour = time.hour.toString().padLeft(2, '0');
+    final minute = time.minute.toString().padLeft(2, '0');
+    return '$hour:$minute';
+  }
+
+  // Metodo per ottenere il periodo del giorno
+  String _getTimePeriod(TimeOfDay time) {
+    if (time.hour < 12) {
+      return 'Mattina';
+    } else if (time.hour < 18) {
+      return 'Pomeriggio';
+    } else {
+      return 'Sera';
     }
   }
 
@@ -446,6 +506,129 @@ class _MyHomePageState extends State<MyHomePage> {
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                         color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Selettore di tempo
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.outline,
+                    width: 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.shadow.withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Selettore Orario:',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        Icon(
+                          Icons.access_time,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Display dell'orario selezionato
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 12,
+                        horizontal: 16,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primaryContainer,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.schedule,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onPrimaryContainer,
+                            size: 24,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            _formatTime(_selectedTime),
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onPrimaryContainer,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    // Periodo del giorno
+                    Text(
+                      _getTimePeriod(_selectedTime),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Bottone per aprire il selettore
+                    ElevatedButton.icon(
+                      onPressed: _isTimePickerOpen ? null : _selectTime,
+                      icon: _isTimePickerOpen
+                          ? SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Theme.of(context).colorScheme.onPrimary,
+                                ),
+                              ),
+                            )
+                          : const Icon(Icons.edit),
+                      label: Text(
+                        _isTimePickerOpen ? 'Apertura...' : 'Cambia Orario',
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
                     ),
                   ],
