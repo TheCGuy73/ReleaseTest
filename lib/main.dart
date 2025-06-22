@@ -265,22 +265,27 @@ class _MyHomePageState extends State<MyHomePage> {
     print('-> Versione App analizzata: $currentSemver, build: $currentBuild');
 
     // Confronta la parte semver (major.minor.patch)
-    List<String> latestSemverParts = latestSemver.split('.');
-    List<String> currentSemverParts = currentSemver.split('.');
+    List<int> latestSemverParts = latestSemver
+        .split('.')
+        .map(int.parse)
+        .toList();
+    List<int> currentSemverParts = currentSemver
+        .split('.')
+        .map(int.parse)
+        .toList();
 
-    for (int i = 0; i < 3; i++) {
-      int latestNum = i < latestSemverParts.length
-          ? int.tryParse(latestSemverParts[i]) ?? 0
-          : 0;
-      int currentNum = i < currentSemverParts.length
-          ? int.tryParse(currentSemverParts[i]) ?? 0
-          : 0;
+    // Assicura che entrambe le liste abbiano la stessa lunghezza per il confronto
+    while (latestSemverParts.length < currentSemverParts.length)
+      latestSemverParts.add(0);
+    while (currentSemverParts.length < latestSemverParts.length)
+      currentSemverParts.add(0);
 
-      if (latestNum > currentNum) {
+    for (int i = 0; i < latestSemverParts.length; i++) {
+      if (latestSemverParts[i] > currentSemverParts[i]) {
         print('Nuova versione trovata (semver)');
         return true;
       }
-      if (latestNum < currentNum) {
+      if (latestSemverParts[i] < currentSemverParts[i]) {
         print('Versione attuale più recente (semver)');
         return false;
       }
