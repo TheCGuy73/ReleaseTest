@@ -207,8 +207,7 @@ class _MyHomePageState extends State<MyHomePage> {
     if (status.isGranted) return true;
 
     // Mostra dialog informativo prima di richiedere i permessi
-    bool shouldRequest =
-        await showDialog<bool>(
+    bool shouldRequest = await showDialog<bool>(
           context: context,
           builder: (BuildContext context) {
             return AlertDialog(
@@ -242,12 +241,11 @@ class _MyHomePageState extends State<MyHomePage> {
 
     bool hasStoragePermission =
         statuses[Permission.storage]?.isGranted == true ||
-        statuses[Permission.manageExternalStorage]?.isGranted == true;
+            statuses[Permission.manageExternalStorage]?.isGranted == true;
 
     if (!hasStoragePermission) {
       // Mostra dialog per aprire le impostazioni
-      bool openSettings =
-          await showDialog<bool>(
+      bool openSettings = await showDialog<bool>(
             context: context,
             builder: (BuildContext context) {
               return AlertDialog(
@@ -335,6 +333,10 @@ class _MyHomePageState extends State<MyHomePage> {
             onSelected: (value) {
               if (value == 'check_update') {
                 _checkForUpdates(isAutomatic: false);
+              } else if (value == 'download_update') {
+                if (_updateResult != null && _updateResult!.release != null) {
+                  _downloadAndInstallUpdate(_updateResult!.release!);
+                }
               } else if (value == 'show_info') {
                 _showVersionInfoDialog();
               }
