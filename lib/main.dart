@@ -41,6 +41,9 @@ class _MyHomePageState extends State<MyHomePage> {
   String _updateStatus = '';
   double _downloadProgress = 0.0;
 
+  // Aggiungo per info dettagliate
+  PackageInfo? _packageInfo;
+
   // Variabili per il selettore di tempo
   TimeOfDay _selectedTime = TimeOfDay.now();
   bool _isTimePickerOpen = false;
@@ -61,8 +64,9 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> _loadAppVersion() async {
     try {
-      PackageInfo packageInfo = await PackageInfo.fromPlatform();
+      final packageInfo = await PackageInfo.fromPlatform();
       setState(() {
+        _packageInfo = packageInfo;
         _appVersion = '${packageInfo.version}+${packageInfo.buildNumber}';
       });
     } catch (e) {
@@ -602,6 +606,49 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  void _showVersionInfoDialog() {
+    if (_packageInfo == null) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Informazioni App'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.info_outline),
+              title: const Text('Nome App'),
+              subtitle: Text(_packageInfo!.appName),
+            ),
+            ListTile(
+              leading: const Icon(Icons.new_releases_outlined),
+              title: const Text('Versione'),
+              subtitle: Text(_packageInfo!.version),
+            ),
+            ListTile(
+              leading: const Icon(Icons.tag),
+              title: const Text('Build'),
+              subtitle: Text(_packageInfo!.buildNumber),
+            ),
+            ListTile(
+              leading: const Icon(Icons.code),
+              title: const Text('Nome Pacchetto'),
+              subtitle: Text(_packageInfo!.packageName),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Chiudi'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -617,10 +664,21 @@ class _MyHomePageState extends State<MyHomePage> {
                 _checkForUpdates(isAutomatic: false);
               } else if (value == 'download_update') {
                 _downloadLatestUpdate();
+              } else if (value == 'show_info') {
+                _showVersionInfoDialog();
               }
             },
             itemBuilder: (BuildContext context) {
               return [
+                // Opzione per le informazioni
+                const PopupMenuItem<String>(
+                  value: 'show_info',
+                  child: ListTile(
+                    leading: Icon(Icons.info_outline),
+                    title: Text('Informazioni'),
+                  ),
+                ),
+                const PopupMenuDivider(),
                 // Opzione per controllare gli aggiornamenti
                 PopupMenuItem<String>(
                   value: 'check_update',
@@ -668,7 +726,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
               ];
             },
-            icon: const Icon(Icons.system_update),
+            icon: const Icon(Icons.more_vert),
           ),
         ],
       ),
