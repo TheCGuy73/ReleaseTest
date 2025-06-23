@@ -20,11 +20,11 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  bool _isDarkMode = false;
+  ThemeMode _themeMode = ThemeMode.system;
 
-  void _toggleTheme() {
+  void _setThemeMode(ThemeMode mode) {
     setState(() {
-      _isDarkMode = !_isDarkMode;
+      _themeMode = mode;
     });
   }
 
@@ -42,23 +42,23 @@ class _MyAppState extends State<MyApp> {
         colorSchemeSeed: Colors.blue,
         useMaterial3: true,
       ),
-      themeMode: _isDarkMode ? ThemeMode.dark : ThemeMode.light,
+      themeMode: _themeMode,
       home: MyHomePage(
-        isDarkMode: _isDarkMode,
-        onThemeChanged: _toggleTheme,
+        themeMode: _themeMode,
+        onThemeModeChanged: _setThemeMode,
       ),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  final bool isDarkMode;
-  final VoidCallback onThemeChanged;
+  final ThemeMode themeMode;
+  final ValueChanged<ThemeMode> onThemeModeChanged;
 
   const MyHomePage({
     super.key,
-    required this.isDarkMode,
-    required this.onThemeChanged,
+    required this.themeMode,
+    required this.onThemeModeChanged,
   });
 
   @override
@@ -283,7 +283,7 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
               } else if (value == 'check_update') {
                 _checkForUpdates();
               } else if (value == 'toggle_theme') {
-                widget.onThemeChanged();
+                widget.onThemeModeChanged(ThemeMode.system);
               }
             },
             itemBuilder: (BuildContext context) {
@@ -303,17 +303,43 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
                   ),
                 ),
                 PopupMenuItem<String>(
-                  value: 'toggle_theme',
-                  child: ListTile(
-                    leading: Icon(
-                        widget.isDarkMode ? Icons.light_mode : Icons.dark_mode),
-                    title: const Text('Tema Scuro'),
-                    trailing: Checkbox(
-                      value: widget.isDarkMode,
-                      onChanged: (value) {
-                        widget.onThemeChanged();
-                      },
-                    ),
+                  enabled: false,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 4.0),
+                        child: Text('Tema',
+                            style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                      RadioListTile<ThemeMode>(
+                        value: ThemeMode.system,
+                        groupValue: widget.themeMode,
+                        onChanged: (mode) {
+                          if (mode != null) widget.onThemeModeChanged(mode);
+                          Navigator.of(context).pop();
+                        },
+                        title: const Text('Automatico (Sistema)'),
+                      ),
+                      RadioListTile<ThemeMode>(
+                        value: ThemeMode.light,
+                        groupValue: widget.themeMode,
+                        onChanged: (mode) {
+                          if (mode != null) widget.onThemeModeChanged(mode);
+                          Navigator.of(context).pop();
+                        },
+                        title: const Text('Chiaro'),
+                      ),
+                      RadioListTile<ThemeMode>(
+                        value: ThemeMode.dark,
+                        groupValue: widget.themeMode,
+                        onChanged: (mode) {
+                          if (mode != null) widget.onThemeModeChanged(mode);
+                          Navigator.of(context).pop();
+                        },
+                        title: const Text('Scuro'),
+                      ),
+                    ],
                   ),
                 ),
               ];
