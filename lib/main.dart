@@ -8,6 +8,11 @@ import 'package:android_intent_plus/android_intent.dart';
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, TargetPlatform;
 
+// Enum per la personalizzazione della UI
+enum TextSize { small, normal, large }
+
+enum WidgetSize { small, normal, large }
+
 void main() {
   // Assicura che i binding di Flutter siano inizializzati prima di eseguire l'app.
   WidgetsFlutterBinding.ensureInitialized();
@@ -142,6 +147,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   Map<String, dynamic>? _pendingUpdateRelease;
   bool _showSleepCalculator = false;
   List<Map<String, dynamic>> _releaseHistory = [];
+  TextSize _textSize = TextSize.large;
+  WidgetSize _widgetSize = WidgetSize.large;
 
   @override
   void initState() {
@@ -359,6 +366,61 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     });
   }
 
+  double getTextSize() {
+    switch (_textSize) {
+      case TextSize.small:
+        return 14;
+      case TextSize.normal:
+        return 18;
+      case TextSize.large:
+        return 24;
+    }
+  }
+
+  double getTitleSize() {
+    switch (_textSize) {
+      case TextSize.small:
+        return 20;
+      case TextSize.normal:
+        return 26;
+      case TextSize.large:
+        return 32;
+    }
+  }
+
+  double getButtonTextSize() {
+    switch (_textSize) {
+      case TextSize.small:
+        return 14;
+      case TextSize.normal:
+        return 18;
+      case TextSize.large:
+        return 22;
+    }
+  }
+
+  double getIconSize() {
+    switch (_widgetSize) {
+      case WidgetSize.small:
+        return 18;
+      case WidgetSize.normal:
+        return 28;
+      case WidgetSize.large:
+        return 36;
+    }
+  }
+
+  EdgeInsets getButtonPadding() {
+    switch (_widgetSize) {
+      case WidgetSize.small:
+        return const EdgeInsets.symmetric(horizontal: 12, vertical: 8);
+      case WidgetSize.normal:
+        return const EdgeInsets.symmetric(horizontal: 24, vertical: 14);
+      case WidgetSize.large:
+        return const EdgeInsets.symmetric(horizontal: 32, vertical: 18);
+    }
+  }
+
   List<Tab> buildTabs(BuildContext context) {
     bool isMobile = defaultTargetPlatform == TargetPlatform.android ||
         defaultTargetPlatform == TargetPlatform.iOS;
@@ -377,6 +439,11 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
               updateStatus: _updateStatus,
               onCheckUpdate: _checkForUpdates,
               onShowVersionInfo: _showVersionInfo,
+              getTextSize: getTextSize(),
+              getTitleSize: getTitleSize(),
+              getButtonTextSize: getButtonTextSize(),
+              getIconSize: getIconSize(),
+              getButtonPadding: getButtonPadding(),
             )),
         Tab(
             text: const SizedBox.shrink(),
@@ -385,6 +452,11 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
               selectedTime: _selectedTime,
               showSleepCalculator: _showSleepCalculator,
               onTimeChanged: _onTimeChanged,
+              getTextSize: getTextSize(),
+              getTitleSize: getTitleSize(),
+              getButtonTextSize: getButtonTextSize(),
+              getIconSize: getIconSize(),
+              getButtonPadding: getButtonPadding(),
             )),
         Tab(
             text: const SizedBox.shrink(),
@@ -393,6 +465,11 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
               releaseHistory: _releaseHistory,
               onCheckUpdate: _checkForUpdates,
               updateResult: _updateResult,
+              getTextSize: getTextSize(),
+              getTitleSize: getTitleSize(),
+              getButtonTextSize: getButtonTextSize(),
+              getIconSize: getIconSize(),
+              getButtonPadding: getButtonPadding(),
             )),
         Tab(
             text: const SizedBox.shrink(),
@@ -401,6 +478,20 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
               themeMode: widget.themeMode,
               onThemeModeChanged: widget.onThemeModeChanged,
               onShowVersionInfo: _showVersionInfo,
+              getTextSize: getTextSize(),
+              getTitleSize: getTitleSize(),
+              getButtonTextSize: getButtonTextSize(),
+              getIconSize: getIconSize(),
+              getButtonPadding: getButtonPadding(),
+            )),
+        Tab(
+            text: const SizedBox.shrink(),
+            icon: const Icon(FluentIcons.design),
+            body: CustomizationTab(
+              textSize: _textSize,
+              widgetSize: _widgetSize,
+              onTextSizeChanged: (v) => setState(() => _textSize = v),
+              onWidgetSizeChanged: (v) => setState(() => _widgetSize = v),
             )),
       ];
     } else {
@@ -416,6 +507,11 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
               updateStatus: _updateStatus,
               onCheckUpdate: _checkForUpdates,
               onShowVersionInfo: _showVersionInfo,
+              getTextSize: getTextSize(),
+              getTitleSize: getTitleSize(),
+              getButtonTextSize: getButtonTextSize(),
+              getIconSize: getIconSize(),
+              getButtonPadding: getButtonPadding(),
             )),
         Tab(
             text: const Text('Calcolatore Sonno'),
@@ -424,6 +520,11 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
               selectedTime: _selectedTime,
               showSleepCalculator: _showSleepCalculator,
               onTimeChanged: _onTimeChanged,
+              getTextSize: getTextSize(),
+              getTitleSize: getTitleSize(),
+              getButtonTextSize: getButtonTextSize(),
+              getIconSize: getIconSize(),
+              getButtonPadding: getButtonPadding(),
             )),
         Tab(
             text: const Text('Aggiornamenti'),
@@ -432,6 +533,11 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
               releaseHistory: _releaseHistory,
               onCheckUpdate: _checkForUpdates,
               updateResult: _updateResult,
+              getTextSize: getTextSize(),
+              getTitleSize: getTitleSize(),
+              getButtonTextSize: getButtonTextSize(),
+              getIconSize: getIconSize(),
+              getButtonPadding: getButtonPadding(),
             )),
         Tab(
             text: const Text('Info'),
@@ -440,6 +546,20 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
               themeMode: widget.themeMode,
               onThemeModeChanged: widget.onThemeModeChanged,
               onShowVersionInfo: _showVersionInfo,
+              getTextSize: getTextSize(),
+              getTitleSize: getTitleSize(),
+              getButtonTextSize: getButtonTextSize(),
+              getIconSize: getIconSize(),
+              getButtonPadding: getButtonPadding(),
+            )),
+        Tab(
+            text: const Text('Personalizzazione UI'),
+            icon: const Icon(FluentIcons.design),
+            body: CustomizationTab(
+              textSize: _textSize,
+              widgetSize: _widgetSize,
+              onTextSizeChanged: (v) => setState(() => _textSize = v),
+              onWidgetSizeChanged: (v) => setState(() => _widgetSize = v),
             )),
       ];
     }
@@ -478,6 +598,12 @@ class DashboardTab extends StatefulWidget {
   final String updateStatus;
   final VoidCallback onCheckUpdate;
   final VoidCallback onShowVersionInfo;
+  final double getTextSize;
+  final double getTitleSize;
+  final double getButtonTextSize;
+  final double getIconSize;
+  final EdgeInsets getButtonPadding;
+
   const DashboardTab({
     super.key,
     required this.updateResult,
@@ -486,7 +612,13 @@ class DashboardTab extends StatefulWidget {
     required this.updateStatus,
     required this.onCheckUpdate,
     required this.onShowVersionInfo,
+    required this.getTextSize,
+    required this.getTitleSize,
+    required this.getButtonTextSize,
+    required this.getIconSize,
+    required this.getButtonPadding,
   });
+
   @override
   State<DashboardTab> createState() => _DashboardTabState();
 }
@@ -521,38 +653,58 @@ class _DashboardTabState extends State<DashboardTab> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(_displayedText,
-                style: FluentTheme.of(context).typography.title),
-            const SizedBox(height: 16),
+                style: FluentTheme.of(context)
+                    .typography
+                    .title
+                    ?.copyWith(fontSize: widget.getTitleSize)),
+            const SizedBox(height: 32),
             InfoBar(
-              title: Text(widget.updateResult?.isUpdateAvailable == true
-                  ? 'Aggiornamento disponibile!'
-                  : 'App aggiornata'),
+              title: Text(
+                widget.updateResult?.isUpdateAvailable == true
+                    ? 'Aggiornamento disponibile!'
+                    : 'App aggiornata',
+                style: const TextStyle(fontSize: 22),
+              ),
               severity: widget.updateResult?.isUpdateAvailable == true
                   ? InfoBarSeverity.warning
                   : InfoBarSeverity.success,
               action: widget.updateResult?.isUpdateAvailable == true
                   ? Button(
-                      child: const Text('Aggiorna'),
-                      onPressed: widget.onCheckUpdate)
+                      child: Text('Aggiorna',
+                          style: TextStyle(fontSize: widget.getButtonTextSize)),
+                      onPressed: widget.onCheckUpdate,
+                      style: ButtonStyle(
+                          padding: ButtonState.all(widget.getButtonPadding)),
+                    )
                   : null,
             ),
             if (widget.isDownloading) ...[
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
               ProgressBar(
-                  value: widget.downloadProgress > 0
-                      ? widget.downloadProgress
-                      : null),
-              const SizedBox(height: 8),
-              Text(widget.updateStatus),
+                value: widget.downloadProgress > 0
+                    ? widget.downloadProgress
+                    : null,
+              ),
+              const SizedBox(height: 16),
+              Text(widget.updateStatus,
+                  style: TextStyle(fontSize: widget.getButtonTextSize)),
             ],
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
             Button(
-                child: const Text('Controlla Aggiornamenti'),
-                onPressed: widget.onCheckUpdate),
-            const SizedBox(height: 8),
+              child: Text('Controlla Aggiornamenti',
+                  style: TextStyle(fontSize: widget.getButtonTextSize)),
+              onPressed: widget.onCheckUpdate,
+              style: ButtonStyle(
+                  padding: ButtonState.all(widget.getButtonPadding)),
+            ),
+            const SizedBox(height: 16),
             Button(
-                child: const Text('Info App'),
-                onPressed: widget.onShowVersionInfo),
+              child: Text('Info App',
+                  style: TextStyle(fontSize: widget.getButtonTextSize)),
+              onPressed: widget.onShowVersionInfo,
+              style: ButtonStyle(
+                  padding: ButtonState.all(widget.getButtonPadding)),
+            ),
           ],
         ),
       ),
@@ -564,11 +716,23 @@ class SleepCalculatorTab extends StatefulWidget {
   final material.TimeOfDay? selectedTime;
   final bool showSleepCalculator;
   final ValueChanged<material.TimeOfDay> onTimeChanged;
+  final double getTextSize;
+  final double getTitleSize;
+  final double getButtonTextSize;
+  final double getIconSize;
+  final EdgeInsets getButtonPadding;
+
   const SleepCalculatorTab(
       {super.key,
       required this.selectedTime,
       required this.showSleepCalculator,
-      required this.onTimeChanged});
+      required this.onTimeChanged,
+      required this.getTextSize,
+      required this.getTitleSize,
+      required this.getButtonTextSize,
+      required this.getIconSize,
+      required this.getButtonPadding});
+
   @override
   State<SleepCalculatorTab> createState() => _SleepCalculatorTabState();
 }
@@ -804,64 +968,81 @@ class _SleepCalculatorTabState extends State<SleepCalculatorTab> {
       duration: const Duration(milliseconds: 700),
       child: Center(
         child: Container(
-          constraints: const BoxConstraints(maxWidth: 400),
-          padding: const EdgeInsets.all(24),
+          constraints: const BoxConstraints(maxWidth: 500),
+          padding: const EdgeInsets.all(32),
           decoration: BoxDecoration(
             color: FluentTheme.of(context).micaBackgroundColor,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(24),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text('Calcolatore del Sonno',
-                  style: FluentTheme.of(context).typography.title),
-              const SizedBox(height: 16),
+                  style: FluentTheme.of(context)
+                      .typography
+                      .title
+                      ?.copyWith(fontSize: widget.getTitleSize)),
+              const SizedBox(height: 24),
               Button(
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(FluentIcons.clock),
-                    const SizedBox(width: 8),
-                    Text(_selectedTime == null
-                        ? 'Scegli orario'
-                        : 'Orario: ${_formatTime(_selectedTime!)}'),
+                    const Icon(FluentIcons.clock, size: 32),
+                    const SizedBox(width: 12),
+                    Text(
+                        _selectedTime == null
+                            ? 'Scegli orario'
+                            : 'Orario: ${_formatTime(_selectedTime!)}',
+                        style: const TextStyle(fontSize: 22)),
                   ],
                 ),
                 onPressed: () => _selectTime(context),
+                style: ButtonStyle(
+                    padding: ButtonState.all(widget.getButtonPadding)),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Button(
-                    child: const Text('Calcola Sonno'),
+                    child: Text('Calcola Sonno',
+                        style: TextStyle(fontSize: widget.getButtonTextSize)),
                     onPressed:
                         _selectedTime == null ? null : _calculateBedTimes,
+                    style: ButtonStyle(
+                        padding: ButtonState.all(widget.getButtonPadding)),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 24),
                   Button(
-                    child: const Text('Calcola Sveglia'),
+                    child: Text('Calcola Sveglia',
+                        style: TextStyle(fontSize: widget.getButtonTextSize)),
                     onPressed:
                         _selectedTime == null ? null : _calculateWakeUpTimes,
+                    style: ButtonStyle(
+                        padding: ButtonState.all(widget.getButtonPadding)),
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
               if (_results.isNotEmpty) ...[
                 Text(
                   _calculationType == 'Sveglia'
                       ? 'Dovresti svegliarti in uno di questi orari:'
                       : 'Dovresti andare a letto in uno di questi orari:',
-                  style: FluentTheme.of(context).typography.subtitle,
+                  style: FluentTheme.of(context)
+                      .typography
+                      .subtitle
+                      ?.copyWith(fontSize: widget.getButtonTextSize),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
                 Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
+                  spacing: 12,
+                  runSpacing: 12,
                   alignment: WrapAlignment.center,
                   children: _results
                       .map((t) => InfoBar(
-                            title: Text(_formatTime(t)),
+                            title: Text(_formatTime(t),
+                                style: const TextStyle(fontSize: 20)),
                             severity: InfoBarSeverity.info,
                           ))
                       .toList(),
@@ -879,11 +1060,23 @@ class UpdatesTab extends StatelessWidget {
   final List<Map<String, dynamic>> releaseHistory;
   final VoidCallback onCheckUpdate;
   final UpdateResult? updateResult;
+  final double getTextSize;
+  final double getTitleSize;
+  final double getButtonTextSize;
+  final double getIconSize;
+  final EdgeInsets getButtonPadding;
+
   const UpdatesTab(
       {super.key,
       required this.releaseHistory,
       required this.onCheckUpdate,
-      required this.updateResult});
+      required this.updateResult,
+      required this.getTextSize,
+      required this.getTitleSize,
+      required this.getButtonTextSize,
+      required this.getIconSize,
+      required this.getButtonPadding});
+
   @override
   Widget build(BuildContext context) {
     return AnimatedOpacity(
@@ -903,8 +1096,10 @@ class UpdatesTab extends StatelessWidget {
                 itemBuilder: (context, index) {
                   final rel = releaseHistory[index];
                   return InfoBar(
-                    title: Text(rel['tag_name'] ?? ''),
-                    content: Text(rel['name'] ?? ''),
+                    title: Text(rel['tag_name'] ?? '',
+                        style: const TextStyle(fontSize: 20)),
+                    content: Text(rel['name'] ?? '',
+                        style: const TextStyle(fontSize: 20)),
                     severity: InfoBarSeverity.info,
                   );
                 },
@@ -925,11 +1120,23 @@ class InfoTab extends StatelessWidget {
   final ThemeMode themeMode;
   final ValueChanged<ThemeMode> onThemeModeChanged;
   final VoidCallback onShowVersionInfo;
+  final double getTextSize;
+  final double getTitleSize;
+  final double getButtonTextSize;
+  final double getIconSize;
+  final EdgeInsets getButtonPadding;
+
   const InfoTab(
       {super.key,
       required this.themeMode,
       required this.onThemeModeChanged,
-      required this.onShowVersionInfo});
+      required this.onShowVersionInfo,
+      required this.getTextSize,
+      required this.getTitleSize,
+      required this.getButtonTextSize,
+      required this.getIconSize,
+      required this.getButtonPadding});
+
   @override
   Widget build(BuildContext context) {
     return AnimatedOpacity(
@@ -968,6 +1175,84 @@ class InfoTab extends StatelessWidget {
             Button(child: const Text('Info App'), onPressed: onShowVersionInfo),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class CustomizationTab extends StatelessWidget {
+  final TextSize textSize;
+  final WidgetSize widgetSize;
+  final ValueChanged<TextSize> onTextSizeChanged;
+  final ValueChanged<WidgetSize> onWidgetSizeChanged;
+  const CustomizationTab(
+      {super.key,
+      required this.textSize,
+      required this.widgetSize,
+      required this.onTextSizeChanged,
+      required this.onWidgetSizeChanged});
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(32.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Personalizzazione UI',
+              style: FluentTheme.of(context)
+                  .typography
+                  .title
+                  ?.copyWith(fontSize: 28)),
+          const SizedBox(height: 32),
+          Text('Dimensione testo:', style: const TextStyle(fontSize: 22)),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              RadioButton(
+                checked: textSize == TextSize.small,
+                onChanged: (v) => onTextSizeChanged(TextSize.small),
+                content: const Text('Piccolo', style: TextStyle(fontSize: 18)),
+              ),
+              const SizedBox(width: 16),
+              RadioButton(
+                checked: textSize == TextSize.normal,
+                onChanged: (v) => onTextSizeChanged(TextSize.normal),
+                content: const Text('Normale', style: TextStyle(fontSize: 18)),
+              ),
+              const SizedBox(width: 16),
+              RadioButton(
+                checked: textSize == TextSize.large,
+                onChanged: (v) => onTextSizeChanged(TextSize.large),
+                content: const Text('Grande', style: TextStyle(fontSize: 18)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 32),
+          Text('Dimensione bottoni e icone:',
+              style: const TextStyle(fontSize: 22)),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              RadioButton(
+                checked: widgetSize == WidgetSize.small,
+                onChanged: (v) => onWidgetSizeChanged(WidgetSize.small),
+                content: const Text('Piccolo', style: TextStyle(fontSize: 18)),
+              ),
+              const SizedBox(width: 16),
+              RadioButton(
+                checked: widgetSize == WidgetSize.normal,
+                onChanged: (v) => onWidgetSizeChanged(WidgetSize.normal),
+                content: const Text('Normale', style: TextStyle(fontSize: 18)),
+              ),
+              const SizedBox(width: 16),
+              RadioButton(
+                checked: widgetSize == WidgetSize.large,
+                onChanged: (v) => onWidgetSizeChanged(WidgetSize.large),
+                content: const Text('Grande', style: TextStyle(fontSize: 18)),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
