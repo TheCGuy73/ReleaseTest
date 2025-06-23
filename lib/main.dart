@@ -5,6 +5,8 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:installed_apps/installed_apps.dart';
 import 'update_service.dart';
 import 'package:android_intent_plus/android_intent.dart';
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, TargetPlatform;
 
 void main() {
   // Assicura che i binding di Flutter siano inizializzati prima di eseguire l'app.
@@ -22,6 +24,17 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   ThemeMode _themeMode = ThemeMode.system;
+  bool _showSplash = true;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      setState(() {
+        _showSplash = false;
+      });
+    });
+  }
 
   void _setThemeMode(ThemeMode mode) {
     setState(() {
@@ -50,9 +63,55 @@ class _MyAppState extends State<MyApp> {
           'light': material.Colors.blue.shade200,
         }),
       ),
-      home: MainScreen(
-        themeMode: _themeMode,
-        onThemeModeChanged: _setThemeMode,
+      home: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 800),
+        child: _showSplash
+            ? const SplashScreen()
+            : MainScreen(
+                themeMode: _themeMode,
+                onThemeModeChanged: _setThemeMode,
+              ),
+      ),
+    );
+  }
+}
+
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
+  double _opacity = 0.0;
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(const Duration(milliseconds: 100), () {
+      setState(() {
+        _opacity = 1.0;
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ScaffoldPage(
+      content: Center(
+        child: AnimatedOpacity(
+          opacity: _opacity,
+          duration: const Duration(milliseconds: 900),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Image.asset('assets/icon/icon.png', width: 96, height: 96),
+              const SizedBox(height: 24),
+              Text('SleepTrack',
+                  style: FluentTheme.of(context).typography.title),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -300,31 +359,91 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     });
   }
 
-  List<Widget> get _tabs => [
-        DashboardTab(
-          updateResult: _updateResult,
-          isDownloading: _isDownloading,
-          downloadProgress: _downloadProgress,
-          updateStatus: _updateStatus,
-          onCheckUpdate: _checkForUpdates,
-          onShowVersionInfo: _showVersionInfo,
-        ),
-        SleepCalculatorTab(
-          selectedTime: _selectedTime,
-          showSleepCalculator: _showSleepCalculator,
-          onTimeChanged: _onTimeChanged,
-        ),
-        UpdatesTab(
-          releaseHistory: _releaseHistory,
-          onCheckUpdate: _checkForUpdates,
-          updateResult: _updateResult,
-        ),
-        InfoTab(
-          themeMode: widget.themeMode,
-          onThemeModeChanged: widget.onThemeModeChanged,
-          onShowVersionInfo: _showVersionInfo,
-        ),
+  List<Tab> buildTabs(BuildContext context) {
+    bool isMobile = defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.iOS;
+    bool isPortrait =
+        MediaQuery.of(context).orientation == Orientation.portrait;
+    if (isMobile && isPortrait) {
+      // Solo icone
+      return [
+        Tab(
+            text: const SizedBox.shrink(),
+            icon: const Icon(FluentIcons.home),
+            body: DashboardTab(
+              updateResult: _updateResult,
+              isDownloading: _isDownloading,
+              downloadProgress: _downloadProgress,
+              updateStatus: _updateStatus,
+              onCheckUpdate: _checkForUpdates,
+              onShowVersionInfo: _showVersionInfo,
+            )),
+        Tab(
+            text: const SizedBox.shrink(),
+            icon: const Icon(FluentIcons.clock),
+            body: SleepCalculatorTab(
+              selectedTime: _selectedTime,
+              showSleepCalculator: _showSleepCalculator,
+              onTimeChanged: _onTimeChanged,
+            )),
+        Tab(
+            text: const SizedBox.shrink(),
+            icon: const Icon(FluentIcons.sync),
+            body: UpdatesTab(
+              releaseHistory: _releaseHistory,
+              onCheckUpdate: _checkForUpdates,
+              updateResult: _updateResult,
+            )),
+        Tab(
+            text: const SizedBox.shrink(),
+            icon: const Icon(FluentIcons.info),
+            body: InfoTab(
+              themeMode: widget.themeMode,
+              onThemeModeChanged: widget.onThemeModeChanged,
+              onShowVersionInfo: _showVersionInfo,
+            )),
       ];
+    } else {
+      // Icone + testo
+      return [
+        Tab(
+            text: const Text('Dashboard'),
+            icon: const Icon(FluentIcons.home),
+            body: DashboardTab(
+              updateResult: _updateResult,
+              isDownloading: _isDownloading,
+              downloadProgress: _downloadProgress,
+              updateStatus: _updateStatus,
+              onCheckUpdate: _checkForUpdates,
+              onShowVersionInfo: _showVersionInfo,
+            )),
+        Tab(
+            text: const Text('Calcolatore Sonno'),
+            icon: const Icon(FluentIcons.clock),
+            body: SleepCalculatorTab(
+              selectedTime: _selectedTime,
+              showSleepCalculator: _showSleepCalculator,
+              onTimeChanged: _onTimeChanged,
+            )),
+        Tab(
+            text: const Text('Aggiornamenti'),
+            icon: const Icon(FluentIcons.sync),
+            body: UpdatesTab(
+              releaseHistory: _releaseHistory,
+              onCheckUpdate: _checkForUpdates,
+              updateResult: _updateResult,
+            )),
+        Tab(
+            text: const Text('Info'),
+            icon: const Icon(FluentIcons.info),
+            body: InfoTab(
+              themeMode: widget.themeMode,
+              onThemeModeChanged: widget.onThemeModeChanged,
+              onShowVersionInfo: _showVersionInfo,
+            )),
+      ];
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -344,47 +463,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       content: TabView(
         currentIndex: _currentIndex,
         onChanged: (i) => setState(() => _currentIndex = i),
-        tabs: [
-          Tab(
-            text: const Text('Dashboard'),
-            icon: const Icon(FluentIcons.home),
-            body: DashboardTab(
-              updateResult: _updateResult,
-              isDownloading: _isDownloading,
-              downloadProgress: _downloadProgress,
-              updateStatus: _updateStatus,
-              onCheckUpdate: _checkForUpdates,
-              onShowVersionInfo: _showVersionInfo,
-            ),
-          ),
-          Tab(
-            text: const Text('Calcolatore Sonno'),
-            icon: const Icon(FluentIcons.clock),
-            body: SleepCalculatorTab(
-              selectedTime: _selectedTime,
-              showSleepCalculator: _showSleepCalculator,
-              onTimeChanged: _onTimeChanged,
-            ),
-          ),
-          Tab(
-            text: const Text('Aggiornamenti'),
-            icon: const Icon(FluentIcons.sync),
-            body: UpdatesTab(
-              releaseHistory: _releaseHistory,
-              onCheckUpdate: _checkForUpdates,
-              updateResult: _updateResult,
-            ),
-          ),
-          Tab(
-            text: const Text('Info'),
-            icon: const Icon(FluentIcons.info),
-            body: InfoTab(
-              themeMode: widget.themeMode,
-              onThemeModeChanged: widget.onThemeModeChanged,
-              onShowVersionInfo: _showVersionInfo,
-            ),
-          ),
-        ],
+        tabs: buildTabs(context),
       ),
     );
   }
@@ -392,7 +471,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 
 // --- TABS ---
 
-class DashboardTab extends StatelessWidget {
+class DashboardTab extends StatefulWidget {
   final UpdateResult? updateResult;
   final bool isDownloading;
   final double downloadProgress;
@@ -409,39 +488,73 @@ class DashboardTab extends StatelessWidget {
     required this.onShowVersionInfo,
   });
   @override
+  State<DashboardTab> createState() => _DashboardTabState();
+}
+
+class _DashboardTabState extends State<DashboardTab> {
+  String _displayedText = '';
+  final String _fullText = 'Benvenuto in SleepTrack!';
+  int _charIndex = 0;
+  @override
+  void initState() {
+    super.initState();
+    _startTypewriter();
+  }
+
+  void _startTypewriter() async {
+    while (_charIndex < _fullText.length) {
+      await Future.delayed(const Duration(milliseconds: 45));
+      setState(() {
+        _displayedText = _fullText.substring(0, _charIndex + 1);
+        _charIndex++;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text('Benvenuto in SleepTrack!',
-              style: FluentTheme.of(context).typography.title),
-          const SizedBox(height: 16),
-          InfoBar(
-            title: Text(updateResult?.isUpdateAvailable == true
-                ? 'Aggiornamento disponibile!'
-                : 'App aggiornata'),
-            severity: updateResult?.isUpdateAvailable == true
-                ? InfoBarSeverity.warning
-                : InfoBarSeverity.success,
-            action: updateResult?.isUpdateAvailable == true
-                ? Button(
-                    child: const Text('Aggiorna'), onPressed: onCheckUpdate)
-                : null,
-          ),
-          if (isDownloading) ...[
+    return AnimatedOpacity(
+      opacity: 1.0,
+      duration: const Duration(milliseconds: 700),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(_displayedText,
+                style: FluentTheme.of(context).typography.title),
             const SizedBox(height: 16),
-            ProgressBar(value: downloadProgress > 0 ? downloadProgress : null),
+            InfoBar(
+              title: Text(widget.updateResult?.isUpdateAvailable == true
+                  ? 'Aggiornamento disponibile!'
+                  : 'App aggiornata'),
+              severity: widget.updateResult?.isUpdateAvailable == true
+                  ? InfoBarSeverity.warning
+                  : InfoBarSeverity.success,
+              action: widget.updateResult?.isUpdateAvailable == true
+                  ? Button(
+                      child: const Text('Aggiorna'),
+                      onPressed: widget.onCheckUpdate)
+                  : null,
+            ),
+            if (widget.isDownloading) ...[
+              const SizedBox(height: 16),
+              ProgressBar(
+                  value: widget.downloadProgress > 0
+                      ? widget.downloadProgress
+                      : null),
+              const SizedBox(height: 8),
+              Text(widget.updateStatus),
+            ],
+            const SizedBox(height: 24),
+            Button(
+                child: const Text('Controlla Aggiornamenti'),
+                onPressed: widget.onCheckUpdate),
             const SizedBox(height: 8),
-            Text(updateStatus),
+            Button(
+                child: const Text('Info App'),
+                onPressed: widget.onShowVersionInfo),
           ],
-          const SizedBox(height: 24),
-          Button(
-              child: const Text('Controlla Aggiornamenti'),
-              onPressed: onCheckUpdate),
-          const SizedBox(height: 8),
-          Button(child: const Text('Info App'), onPressed: onShowVersionInfo),
-        ],
+        ),
       ),
     );
   }
@@ -565,71 +678,76 @@ class _SleepCalculatorTabState extends State<SleepCalculatorTab> {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 400),
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: FluentTheme.of(context).micaBackgroundColor,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('Calcolatore del Sonno',
-                style: FluentTheme.of(context).typography.title),
-            const SizedBox(height: 16),
-            Button(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
+    return AnimatedOpacity(
+      opacity: 1.0,
+      duration: const Duration(milliseconds: 700),
+      child: Center(
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 400),
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: FluentTheme.of(context).micaBackgroundColor,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Calcolatore del Sonno',
+                  style: FluentTheme.of(context).typography.title),
+              const SizedBox(height: 16),
+              Button(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(FluentIcons.clock),
+                    const SizedBox(width: 8),
+                    Text(_selectedTime == null
+                        ? 'Scegli orario'
+                        : 'Orario: ${_formatTime(_selectedTime!)}'),
+                  ],
+                ),
+                onPressed: () => _selectTime(context),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(FluentIcons.clock),
-                  const SizedBox(width: 8),
-                  Text(_selectedTime == null
-                      ? 'Scegli orario'
-                      : 'Orario: ${_formatTime(_selectedTime!)}'),
+                  Button(
+                    child: const Text('Calcola Sonno'),
+                    onPressed:
+                        _selectedTime == null ? null : _calculateBedTimes,
+                  ),
+                  const SizedBox(width: 12),
+                  Button(
+                    child: const Text('Calcola Sveglia'),
+                    onPressed:
+                        _selectedTime == null ? null : _calculateWakeUpTimes,
+                  ),
                 ],
               ),
-              onPressed: () => _selectTime(context),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Button(
-                  child: const Text('Calcola Sonno'),
-                  onPressed: _selectedTime == null ? null : _calculateBedTimes,
+              const SizedBox(height: 24),
+              if (_results.isNotEmpty) ...[
+                Text(
+                  _calculationType == 'Sveglia'
+                      ? 'Dovresti svegliarti in uno di questi orari:'
+                      : 'Dovresti andare a letto in uno di questi orari:',
+                  style: FluentTheme.of(context).typography.subtitle,
                 ),
-                const SizedBox(width: 12),
-                Button(
-                  child: const Text('Calcola Sveglia'),
-                  onPressed:
-                      _selectedTime == null ? null : _calculateWakeUpTimes,
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  alignment: WrapAlignment.center,
+                  children: _results
+                      .map((t) => InfoBar(
+                            title: Text(_formatTime(t)),
+                            severity: InfoBarSeverity.info,
+                          ))
+                      .toList(),
                 ),
               ],
-            ),
-            const SizedBox(height: 24),
-            if (_results.isNotEmpty) ...[
-              Text(
-                _calculationType == 'Sveglia'
-                    ? 'Dovresti svegliarti in uno di questi orari:'
-                    : 'Dovresti andare a letto in uno di questi orari:',
-                style: FluentTheme.of(context).typography.subtitle,
-              ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                alignment: WrapAlignment.center,
-                children: _results
-                    .map((t) => InfoBar(
-                          title: Text(_formatTime(t)),
-                          severity: InfoBarSeverity.info,
-                        ))
-                    .toList(),
-              ),
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -647,32 +765,36 @@ class UpdatesTab extends StatelessWidget {
       required this.updateResult});
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Storico Aggiornamenti',
-              style: FluentTheme.of(context).typography.subtitle),
-          const SizedBox(height: 12),
-          Expanded(
-            child: ListView.builder(
-              itemCount: releaseHistory.length,
-              itemBuilder: (context, index) {
-                final rel = releaseHistory[index];
-                return InfoBar(
-                  title: Text(rel['tag_name'] ?? ''),
-                  content: Text(rel['name'] ?? ''),
-                  severity: InfoBarSeverity.info,
-                );
-              },
+    return AnimatedOpacity(
+      opacity: 1.0,
+      duration: const Duration(milliseconds: 700),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Storico Aggiornamenti',
+                style: FluentTheme.of(context).typography.subtitle),
+            const SizedBox(height: 12),
+            Expanded(
+              child: ListView.builder(
+                itemCount: releaseHistory.length,
+                itemBuilder: (context, index) {
+                  final rel = releaseHistory[index];
+                  return InfoBar(
+                    title: Text(rel['tag_name'] ?? ''),
+                    content: Text(rel['name'] ?? ''),
+                    severity: InfoBarSeverity.info,
+                  );
+                },
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          Button(
-              child: const Text('Controlla Aggiornamenti'),
-              onPressed: onCheckUpdate),
-        ],
+            const SizedBox(height: 16),
+            Button(
+                child: const Text('Controlla Aggiornamenti'),
+                onPressed: onCheckUpdate),
+          ],
+        ),
       ),
     );
   }
@@ -689,38 +811,42 @@ class InfoTab extends StatelessWidget {
       required this.onShowVersionInfo});
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Impostazioni',
-              style: FluentTheme.of(context).typography.subtitle),
-          const SizedBox(height: 16),
-          Text('Tema:'),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              RadioButton(
-                checked: themeMode == ThemeMode.system,
-                onChanged: (_) => onThemeModeChanged(ThemeMode.system),
-                content: const Text('Sistema'),
-              ),
-              RadioButton(
-                checked: themeMode == ThemeMode.light,
-                onChanged: (_) => onThemeModeChanged(ThemeMode.light),
-                content: const Text('Chiaro'),
-              ),
-              RadioButton(
-                checked: themeMode == ThemeMode.dark,
-                onChanged: (_) => onThemeModeChanged(ThemeMode.dark),
-                content: const Text('Scuro'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          Button(child: const Text('Info App'), onPressed: onShowVersionInfo),
-        ],
+    return AnimatedOpacity(
+      opacity: 1.0,
+      duration: const Duration(milliseconds: 700),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Impostazioni',
+                style: FluentTheme.of(context).typography.subtitle),
+            const SizedBox(height: 16),
+            Text('Tema:'),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                RadioButton(
+                  checked: themeMode == ThemeMode.system,
+                  onChanged: (_) => onThemeModeChanged(ThemeMode.system),
+                  content: const Text('Sistema'),
+                ),
+                RadioButton(
+                  checked: themeMode == ThemeMode.light,
+                  onChanged: (_) => onThemeModeChanged(ThemeMode.light),
+                  content: const Text('Chiaro'),
+                ),
+                RadioButton(
+                  checked: themeMode == ThemeMode.dark,
+                  onChanged: (_) => onThemeModeChanged(ThemeMode.dark),
+                  content: const Text('Scuro'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            Button(child: const Text('Info App'), onPressed: onShowVersionInfo),
+          ],
+        ),
       ),
     );
   }
