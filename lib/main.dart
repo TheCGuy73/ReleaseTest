@@ -1106,7 +1106,7 @@ class UpdatesTab extends StatelessWidget {
     return AnimatedOpacity(
       opacity: 1.0,
       duration: const Duration(milliseconds: 700),
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1114,21 +1114,13 @@ class UpdatesTab extends StatelessWidget {
             Text('Storico Aggiornamenti',
                 style: FluentTheme.of(context).typography.subtitle),
             const SizedBox(height: 12),
-            Expanded(
-              child: ListView.builder(
-                itemCount: releaseHistory.length,
-                itemBuilder: (context, index) {
-                  final rel = releaseHistory[index];
-                  return InfoBar(
-                    title: Text(rel['tag_name'] ?? '',
-                        style: const TextStyle(fontSize: 20)),
-                    content: Text(rel['name'] ?? '',
-                        style: const TextStyle(fontSize: 20)),
-                    severity: InfoBarSeverity.info,
-                  );
-                },
-              ),
-            ),
+            ...releaseHistory.map((rel) => InfoBar(
+                  title: Text(rel['tag_name'] ?? '',
+                      style: const TextStyle(fontSize: 20)),
+                  content: Text(rel['name'] ?? '',
+                      style: const TextStyle(fontSize: 20)),
+                  severity: InfoBarSeverity.info,
+                )),
             const SizedBox(height: 16),
             Button(
                 child: const Text('Controlla Aggiornamenti'),
@@ -1166,7 +1158,7 @@ class InfoTab extends StatelessWidget {
     return AnimatedOpacity(
       opacity: 1.0,
       duration: const Duration(milliseconds: 700),
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
