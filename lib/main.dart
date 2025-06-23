@@ -610,6 +610,7 @@ class _SleepCalculatorTabState extends State<SleepCalculatorTab> {
             hour: wakeUpTime.hour, minute: wakeUpTime.minute));
       }
     });
+    _askSetAlarm();
   }
 
   void _calculateBedTimes() {
@@ -626,6 +627,126 @@ class _SleepCalculatorTabState extends State<SleepCalculatorTab> {
             material.TimeOfDay(hour: bedTime.hour, minute: bedTime.minute));
       }
     });
+    _askSetAlarm();
+  }
+
+  Future<void> _askSetAlarm() async {
+    if (_results.isEmpty) return;
+    final res = await showDialog<bool>(
+      context: context,
+      builder: (context) => ContentDialog(
+        title: const Text('Imposta Sveglia'),
+        content: const Text(
+            'Vuoi impostare una sveglia per uno degli orari suggeriti?'),
+        actions: [
+          Button(
+            child: const Text('No'),
+            onPressed: () => Navigator.of(context).pop(false),
+          ),
+          Button(
+            child: const Text('Sì'),
+            onPressed: () => Navigator.of(context).pop(true),
+          ),
+        ],
+      ),
+    );
+    if (res == true) {
+      await _handleSetAlarm();
+    }
+  }
+
+  Future<void> _handleSetAlarm() async {
+    // Verifica se esiste l'app orologio (Google Clock)
+    const clockAppPackage = 'com.google.android.deskclock';
+    final isInstalled = await InstalledApps.isAppInstalled(clockAppPackage);
+    if (isInstalled != true) {
+      showDialog(
+        context: context,
+        builder: (context) => ContentDialog(
+          title: const Text('Errore'),
+          content: const Text(
+              'Per impostare la sveglia è necessaria l\'app Google Orologio.'),
+          actions: [
+            Button(
+              child: const Text('OK'),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+    // Mostra dialog per selezionare l'orario
+    final selected = await showDialog<material.TimeOfDay>(
+      context: context,
+      builder: (context) => ContentDialog(
+        title: const Text('Scegli Orario Sveglia'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: _results
+              .map((t) => Button(
+                    child: Text(_formatTime(t)),
+                    onPressed: () => Navigator.of(context).pop(t),
+                  ))
+              .toList(),
+        ),
+        actions: [
+          Button(
+            child: const Text('Annulla'),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ],
+      ),
+    );
+    if (selected != null) {
+      await _setAlarm(selected);
+    }
+  }
+
+  Future<void> _setAlarm(material.TimeOfDay time) async {
+    final intent = AndroidIntent(
+      action: 'android.intent.action.SET_ALARM',
+      arguments: <String, dynamic>{
+        'android.intent.extra.alarm.HOUR': time.hour,
+        'android.intent.extra.alarm.MINUTES': time.minute,
+        'android.intent.extra.alarm.MESSAGE': 'Sveglia da SleepTrack',
+        'android.intent.extra.alarm.SKIP_UI': false,
+      },
+    );
+    try {
+      await intent.launch();
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => ContentDialog(
+            title: const Text('Sveglia impostata'),
+            content: Text('Sveglia impostata per le ${_formatTime(time)}.'),
+            actions: [
+              Button(
+                child: const Text('OK'),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => ContentDialog(
+            title: const Text('Errore'),
+            content: Text('Impossibile impostare la sveglia: $e'),
+            actions: [
+              Button(
+                child: const Text('OK'),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ],
+          ),
+        );
+      }
+    }
   }
 
   String _formatTime(material.TimeOfDay time) {
