@@ -349,7 +349,17 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sleep Calculator'),
+        leading: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Image.asset(
+            'assets/icon/icon.png',
+            fit: BoxFit.contain,
+            height: 32,
+            width: 32,
+          ),
+        ),
+        title: const Text('SleepTrack'),
+        centerTitle: true,
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           PopupMenuButton<String>(
