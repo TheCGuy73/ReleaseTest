@@ -13,6 +13,8 @@ enum TextSize { small, normal, large }
 
 enum WidgetSize { small, normal, large }
 
+enum ContextualSize { small, normal, large }
+
 void main() {
   // Assicura che i binding di Flutter siano inizializzati prima di eseguire l'app.
   WidgetsFlutterBinding.ensureInitialized();
@@ -149,6 +151,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   List<Map<String, dynamic>> _releaseHistory = [];
   TextSize _textSize = TextSize.large;
   WidgetSize _widgetSize = WidgetSize.large;
+  ContextualSize _contextualSize = ContextualSize.large;
 
   @override
   void initState() {
@@ -366,59 +369,75 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     });
   }
 
-  double getTextSize() {
-    switch (_textSize) {
-      case TextSize.small:
-        return 14;
-      case TextSize.normal:
-        return 18;
-      case TextSize.large:
-        return 24;
+  double getContextualScale() {
+    switch (_contextualSize) {
+      case ContextualSize.small:
+        return 0.8;
+      case ContextualSize.normal:
+        return 1.0;
+      case ContextualSize.large:
+        return 1.3;
     }
+  }
+
+  double getTextSize() {
+    final baseSize = switch (_textSize) {
+      TextSize.small => 14.0,
+      TextSize.normal => 18.0,
+      TextSize.large => 24.0,
+    };
+    return baseSize * getContextualScale();
   }
 
   double getTitleSize() {
-    switch (_textSize) {
-      case TextSize.small:
-        return 20;
-      case TextSize.normal:
-        return 26;
-      case TextSize.large:
-        return 32;
-    }
+    final baseSize = switch (_textSize) {
+      TextSize.small => 20.0,
+      TextSize.normal => 26.0,
+      TextSize.large => 32.0,
+    };
+    return baseSize * getContextualScale();
   }
 
   double getButtonTextSize() {
-    switch (_textSize) {
-      case TextSize.small:
-        return 14;
-      case TextSize.normal:
-        return 18;
-      case TextSize.large:
-        return 22;
-    }
+    final baseSize = switch (_textSize) {
+      TextSize.small => 14.0,
+      TextSize.normal => 18.0,
+      TextSize.large => 22.0,
+    };
+    return baseSize * getContextualScale();
   }
 
   double getIconSize() {
-    switch (_widgetSize) {
-      case WidgetSize.small:
-        return 18;
-      case WidgetSize.normal:
-        return 28;
-      case WidgetSize.large:
-        return 36;
-    }
+    final baseSize = switch (_widgetSize) {
+      WidgetSize.small => 18.0,
+      WidgetSize.normal => 28.0,
+      WidgetSize.large => 36.0,
+    };
+    return baseSize * getContextualScale();
   }
 
   EdgeInsets getButtonPadding() {
-    switch (_widgetSize) {
-      case WidgetSize.small:
-        return const EdgeInsets.symmetric(horizontal: 12, vertical: 8);
-      case WidgetSize.normal:
-        return const EdgeInsets.symmetric(horizontal: 24, vertical: 14);
-      case WidgetSize.large:
-        return const EdgeInsets.symmetric(horizontal: 32, vertical: 18);
-    }
+    final basePadding = switch (_widgetSize) {
+      WidgetSize.small =>
+        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      WidgetSize.normal =>
+        const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+      WidgetSize.large =>
+        const EdgeInsets.symmetric(horizontal: 32, vertical: 18),
+    };
+    final scale = getContextualScale();
+    return EdgeInsets.symmetric(
+      horizontal: basePadding.horizontal * scale,
+      vertical: basePadding.vertical * scale,
+    );
+  }
+
+  double getSpacing() {
+    return 16.0 * getContextualScale();
+  }
+
+  double getLargeSpacing() {
+    return 32.0 * getContextualScale();
   }
 
   List<Tab> buildTabs(BuildContext context) {
@@ -488,10 +507,9 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
             text: const SizedBox.shrink(),
             icon: const Icon(FluentIcons.design),
             body: CustomizationTab(
-              textSize: _textSize,
-              widgetSize: _widgetSize,
-              onTextSizeChanged: (v) => setState(() => _textSize = v),
-              onWidgetSizeChanged: (v) => setState(() => _widgetSize = v),
+              contextualSize: _contextualSize,
+              onContextualSizeChanged: (v) =>
+                  setState(() => _contextualSize = v),
             )),
       ];
     } else {
@@ -556,10 +574,9 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
             text: const Text('Personalizzazione UI'),
             icon: const Icon(FluentIcons.design),
             body: CustomizationTab(
-              textSize: _textSize,
-              widgetSize: _widgetSize,
-              onTextSizeChanged: (v) => setState(() => _textSize = v),
-              onWidgetSizeChanged: (v) => setState(() => _widgetSize = v),
+              contextualSize: _contextualSize,
+              onContextualSizeChanged: (v) =>
+                  setState(() => _contextualSize = v),
             )),
       ];
     }
@@ -652,11 +669,11 @@ class _DashboardTabState extends State<DashboardTab> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(_displayedText,
-                style: FluentTheme.of(context)
-                    .typography
-                    .title
-                    ?.copyWith(fontSize: widget.getTitleSize)),
+            Text(
+                widget.updateResult?.isUpdateAvailable == true
+                    ? 'Aggiornamento disponibile!'
+                    : 'App aggiornata',
+                style: const TextStyle(fontSize: 22)),
             const SizedBox(height: 32),
             InfoBar(
               title: Text(
@@ -1181,79 +1198,170 @@ class InfoTab extends StatelessWidget {
 }
 
 class CustomizationTab extends StatelessWidget {
-  final TextSize textSize;
-  final WidgetSize widgetSize;
-  final ValueChanged<TextSize> onTextSizeChanged;
-  final ValueChanged<WidgetSize> onWidgetSizeChanged;
+  final ContextualSize contextualSize;
+  final ValueChanged<ContextualSize> onContextualSizeChanged;
+
   const CustomizationTab(
       {super.key,
-      required this.textSize,
-      required this.widgetSize,
-      required this.onTextSizeChanged,
-      required this.onWidgetSizeChanged});
+      required this.contextualSize,
+      required this.onContextualSizeChanged});
+
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(32.0),
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      padding: EdgeInsets.all(32.0 * _getScale()),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Personalizzazione UI',
-              style: FluentTheme.of(context)
-                  .typography
-                  .title
-                  ?.copyWith(fontSize: 28)),
-          const SizedBox(height: 32),
-          Text('Dimensione testo:', style: const TextStyle(fontSize: 22)),
-          const SizedBox(height: 12),
+          AnimatedDefaultTextStyle(
+            duration: const Duration(milliseconds: 300),
+            style: FluentTheme.of(context).typography.title?.copyWith(
+                      fontSize: 28.0 * _getScale(),
+                    ) ??
+                const TextStyle(fontSize: 28),
+            child: const Text('Personalizzazione UI'),
+          ),
+          SizedBox(height: 32.0 * _getScale()),
+          AnimatedDefaultTextStyle(
+            duration: const Duration(milliseconds: 300),
+            style: TextStyle(fontSize: 22.0 * _getScale()),
+            child: const Text('Dimensione contestuale:'),
+          ),
+          SizedBox(height: 16.0 * _getScale()),
           Row(
             children: [
-              RadioButton(
-                checked: textSize == TextSize.small,
-                onChanged: (v) => onTextSizeChanged(TextSize.small),
-                content: const Text('Piccolo', style: TextStyle(fontSize: 18)),
+              _buildSizeOption(
+                context,
+                ContextualSize.small,
+                'Piccola',
+                material.Icons.keyboard_arrow_down,
               ),
-              const SizedBox(width: 16),
-              RadioButton(
-                checked: textSize == TextSize.normal,
-                onChanged: (v) => onTextSizeChanged(TextSize.normal),
-                content: const Text('Normale', style: TextStyle(fontSize: 18)),
+              SizedBox(width: 16.0 * _getScale()),
+              _buildSizeOption(
+                context,
+                ContextualSize.normal,
+                'Normale',
+                material.Icons.radio_button_unchecked,
               ),
-              const SizedBox(width: 16),
-              RadioButton(
-                checked: textSize == TextSize.large,
-                onChanged: (v) => onTextSizeChanged(TextSize.large),
-                content: const Text('Grande', style: TextStyle(fontSize: 18)),
+              SizedBox(width: 16.0 * _getScale()),
+              _buildSizeOption(
+                context,
+                ContextualSize.large,
+                'Grande',
+                material.Icons.keyboard_arrow_up,
               ),
             ],
           ),
-          const SizedBox(height: 32),
-          Text('Dimensione bottoni e icone:',
-              style: const TextStyle(fontSize: 22)),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              RadioButton(
-                checked: widgetSize == WidgetSize.small,
-                onChanged: (v) => onWidgetSizeChanged(WidgetSize.small),
-                content: const Text('Piccolo', style: TextStyle(fontSize: 18)),
+          SizedBox(height: 32.0 * _getScale()),
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            padding: EdgeInsets.all(16.0 * _getScale()),
+            decoration: BoxDecoration(
+              color: FluentTheme.of(context).micaBackgroundColor,
+              borderRadius: BorderRadius.circular(12.0 * _getScale()),
+              border: Border.all(
+                color: FluentTheme.of(context).inactiveBackgroundColor,
+                width: 1.0 * _getScale(),
               ),
-              const SizedBox(width: 16),
-              RadioButton(
-                checked: widgetSize == WidgetSize.normal,
-                onChanged: (v) => onWidgetSizeChanged(WidgetSize.normal),
-                content: const Text('Normale', style: TextStyle(fontSize: 18)),
-              ),
-              const SizedBox(width: 16),
-              RadioButton(
-                checked: widgetSize == WidgetSize.large,
-                onChanged: (v) => onWidgetSizeChanged(WidgetSize.large),
-                content: const Text('Grande', style: TextStyle(fontSize: 18)),
-              ),
-            ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AnimatedDefaultTextStyle(
+                  duration: const Duration(milliseconds: 300),
+                  style: TextStyle(
+                    fontSize: 18.0 * _getScale(),
+                    fontWeight: FontWeight.w600,
+                  ),
+                  child: const Text('Anteprima'),
+                ),
+                SizedBox(height: 12.0 * _getScale()),
+                AnimatedDefaultTextStyle(
+                  duration: const Duration(milliseconds: 300),
+                  style: TextStyle(fontSize: 14.0 * _getScale()),
+                  child: const Text(
+                      'Questa è un\'anteprima di come apparirà il testo con la dimensione selezionata.'),
+                ),
+                SizedBox(height: 16.0 * _getScale()),
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  child: Button(
+                    child: Text(
+                      'Pulsante di esempio',
+                      style: TextStyle(fontSize: 16.0 * _getScale()),
+                    ),
+                    onPressed: () {},
+                    style: ButtonStyle(
+                      padding: ButtonState.all(EdgeInsets.symmetric(
+                        horizontal: 24.0 * _getScale(),
+                        vertical: 12.0 * _getScale(),
+                      )),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
+  }
+
+  Widget _buildSizeOption(
+    BuildContext context,
+    ContextualSize size,
+    String label,
+    IconData icon,
+  ) {
+    final isSelected = contextualSize == size;
+    final scale = _getScale();
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeInOut,
+      child: RadioButton(
+        checked: isSelected,
+        onChanged: (v) => onContextualSizeChanged(size),
+        content: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              child: Icon(
+                icon,
+                size: 20.0 * scale,
+                color: isSelected
+                    ? FluentTheme.of(context).accentColor
+                    : FluentTheme.of(context).inactiveBackgroundColor,
+              ),
+            ),
+            SizedBox(width: 8.0 * scale),
+            AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 200),
+              style: TextStyle(
+                fontSize: 16.0 * scale,
+                color: isSelected
+                    ? FluentTheme.of(context).accentColor
+                    : FluentTheme.of(context).inactiveBackgroundColor,
+              ),
+              child: Text(label),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  double _getScale() {
+    switch (contextualSize) {
+      case ContextualSize.small:
+        return 0.8;
+      case ContextualSize.normal:
+        return 1.0;
+      case ContextualSize.large:
+        return 1.3;
+    }
   }
 }
