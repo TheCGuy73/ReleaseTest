@@ -369,31 +369,30 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     });
   }
 
-  double getGlobalScale() => 1.2;
+  double getGlobalScale() => 1.0;
 
   double getTextSize() {
-    final baseSize = 18.0;
+    final baseSize = 16.0;
     return baseSize * getGlobalScale();
   }
 
   double getTitleSize() {
-    final baseSize = 28.0;
+    final baseSize = 24.0;
     return baseSize * getGlobalScale();
   }
 
   double getButtonTextSize() {
-    final baseSize = 20.0;
+    final baseSize = 16.0;
     return baseSize * getGlobalScale();
   }
 
   double getIconSize() {
-    final baseSize = 32.0;
+    final baseSize = 24.0;
     return baseSize * getGlobalScale();
   }
 
   EdgeInsets getButtonPadding() {
-    final basePadding =
-        const EdgeInsets.symmetric(horizontal: 28, vertical: 16);
+    final basePadding = const EdgeInsets.symmetric(horizontal: 16, vertical: 8);
     final scale = getGlobalScale();
     return EdgeInsets.symmetric(
       horizontal: basePadding.horizontal * scale,
@@ -401,9 +400,9 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     );
   }
 
-  double getSpacing() => 20.0 * getGlobalScale();
+  double getSpacing() => 16.0 * getGlobalScale();
 
-  double getLargeSpacing() => 36.0 * getGlobalScale();
+  double getLargeSpacing() => 24.0 * getGlobalScale();
 
   List<Tab> buildTabs(BuildContext context) {
     bool isMobile = defaultTargetPlatform == TargetPlatform.android ||
