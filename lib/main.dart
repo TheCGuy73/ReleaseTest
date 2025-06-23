@@ -503,14 +503,6 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
               getIconSize: getIconSize(),
               getButtonPadding: getButtonPadding(),
             )),
-        Tab(
-            text: const SizedBox.shrink(),
-            icon: const Icon(FluentIcons.design),
-            body: CustomizationTab(
-              contextualSize: _contextualSize,
-              onContextualSizeChanged: (v) =>
-                  setState(() => _contextualSize = v),
-            )),
       ];
     } else {
       // Icone + testo
@@ -570,14 +562,6 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
               getIconSize: getIconSize(),
               getButtonPadding: getButtonPadding(),
             )),
-        Tab(
-            text: const Text('Personalizzazione UI'),
-            icon: const Icon(FluentIcons.design),
-            body: CustomizationTab(
-              contextualSize: _contextualSize,
-              onContextualSizeChanged: (v) =>
-                  setState(() => _contextualSize = v),
-            )),
       ];
     }
   }
@@ -587,15 +571,6 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     return NavigationView(
       appBar: NavigationAppBar(
         title: const Text('SleepTrack'),
-        actions: Row(
-          children: [
-            const Spacer(),
-            IconButton(
-              icon: const Icon(FluentIcons.info),
-              onPressed: _showVersionInfo,
-            ),
-          ],
-        ),
       ),
       content: TabView(
         currentIndex: _currentIndex,
@@ -1193,176 +1168,5 @@ class InfoTab extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-class CustomizationTab extends StatelessWidget {
-  final ContextualSize contextualSize;
-  final ValueChanged<ContextualSize> onContextualSizeChanged;
-
-  const CustomizationTab(
-      {super.key,
-      required this.contextualSize,
-      required this.onContextualSizeChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-      child: SingleChildScrollView(
-        padding: EdgeInsets.all(32.0 * _getScale()),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AnimatedDefaultTextStyle(
-              duration: const Duration(milliseconds: 300),
-              style: FluentTheme.of(context).typography.title?.copyWith(
-                        fontSize: 28.0 * _getScale(),
-                      ) ??
-                  const TextStyle(fontSize: 28),
-              child: const Text('Personalizzazione UI'),
-            ),
-            SizedBox(height: 32.0 * _getScale()),
-            AnimatedDefaultTextStyle(
-              duration: const Duration(milliseconds: 300),
-              style: TextStyle(fontSize: 22.0 * _getScale()),
-              child: const Text('Dimensione contestuale:'),
-            ),
-            SizedBox(height: 16.0 * _getScale()),
-            Row(
-              children: [
-                _buildSizeOption(
-                  context,
-                  ContextualSize.small,
-                  'Piccola',
-                  material.Icons.keyboard_arrow_down,
-                ),
-                SizedBox(width: 16.0 * _getScale()),
-                _buildSizeOption(
-                  context,
-                  ContextualSize.normal,
-                  'Normale',
-                  material.Icons.radio_button_unchecked,
-                ),
-                SizedBox(width: 16.0 * _getScale()),
-                _buildSizeOption(
-                  context,
-                  ContextualSize.large,
-                  'Grande',
-                  material.Icons.keyboard_arrow_up,
-                ),
-              ],
-            ),
-            SizedBox(height: 32.0 * _getScale()),
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              padding: EdgeInsets.all(16.0 * _getScale()),
-              decoration: BoxDecoration(
-                color: FluentTheme.of(context).micaBackgroundColor,
-                borderRadius: BorderRadius.circular(12.0 * _getScale()),
-                border: Border.all(
-                  color: FluentTheme.of(context).inactiveBackgroundColor,
-                  width: 1.0 * _getScale(),
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  AnimatedDefaultTextStyle(
-                    duration: const Duration(milliseconds: 300),
-                    style: TextStyle(
-                      fontSize: 18.0 * _getScale(),
-                      fontWeight: FontWeight.w600,
-                    ),
-                    child: const Text('Anteprima'),
-                  ),
-                  SizedBox(height: 12.0 * _getScale()),
-                  AnimatedDefaultTextStyle(
-                    duration: const Duration(milliseconds: 300),
-                    style: TextStyle(fontSize: 14.0 * _getScale()),
-                    child: const Text(
-                        'Questa è un\'anteprima di come apparirà il testo con la dimensione selezionata.'),
-                  ),
-                  SizedBox(height: 16.0 * _getScale()),
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    child: Button(
-                      child: Text(
-                        'Pulsante di esempio',
-                        style: TextStyle(fontSize: 16.0 * _getScale()),
-                      ),
-                      onPressed: () {},
-                      style: ButtonStyle(
-                        padding: ButtonState.all(EdgeInsets.symmetric(
-                          horizontal: 24.0 * _getScale(),
-                          vertical: 12.0 * _getScale(),
-                        )),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSizeOption(
-    BuildContext context,
-    ContextualSize size,
-    String label,
-    IconData icon,
-  ) {
-    final isSelected = contextualSize == size;
-    final scale = _getScale();
-
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      curve: Curves.easeInOut,
-      child: RadioButton(
-        checked: isSelected,
-        onChanged: (v) => onContextualSizeChanged(size),
-        content: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              child: Icon(
-                icon,
-                size: 20.0 * scale,
-                color: isSelected
-                    ? FluentTheme.of(context).accentColor
-                    : FluentTheme.of(context).inactiveBackgroundColor,
-              ),
-            ),
-            SizedBox(width: 8.0 * scale),
-            AnimatedDefaultTextStyle(
-              duration: const Duration(milliseconds: 200),
-              style: TextStyle(
-                fontSize: 16.0 * scale,
-                color: isSelected
-                    ? FluentTheme.of(context).accentColor
-                    : FluentTheme.of(context).inactiveBackgroundColor,
-              ),
-              child: Text(label),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  double _getScale() {
-    switch (contextualSize) {
-      case ContextualSize.small:
-        return 0.8;
-      case ContextualSize.normal:
-        return 1.0;
-      case ContextualSize.large:
-        return 1.3;
-    }
   }
 }
