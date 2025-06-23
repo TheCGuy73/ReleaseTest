@@ -965,7 +965,7 @@ class _SleepCalculatorTabState extends State<SleepCalculatorTab> {
                           padding: ButtonState.all(widget.getButtonPadding)),
                     ),
                     const SizedBox(height: 24),
-                    Row(
+                    Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Button(
@@ -978,7 +978,7 @@ class _SleepCalculatorTabState extends State<SleepCalculatorTab> {
                               padding:
                                   ButtonState.all(widget.getButtonPadding)),
                         ),
-                        const SizedBox(width: 24),
+                        const SizedBox(height: 16),
                         Button(
                           child: Text('Calcola Sveglia',
                               style: TextStyle(
