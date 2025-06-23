@@ -616,12 +616,6 @@ class _DashboardTabState extends State<DashboardTab> {
                       .title
                       ?.copyWith(fontSize: widget.getTitleSize)),
               const SizedBox(height: 32),
-              Text(
-                  widget.updateResult?.isUpdateAvailable == true
-                      ? 'Aggiornamento disponibile!'
-                      : 'App aggiornata',
-                  style: const TextStyle(fontSize: 22)),
-              const SizedBox(height: 32),
               InfoBar(
                 title: Text(
                   widget.updateResult?.isUpdateAvailable == true
