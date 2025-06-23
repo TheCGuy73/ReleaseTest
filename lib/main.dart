@@ -138,8 +138,38 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       });
       if (result.isUpdateAvailable && !isAutomatic) {
         _showUpdateAvailableDialog(result.release!);
+      } else if (!isAutomatic) {
+        // Feedback: nessun aggiornamento disponibile
+        showDialog(
+          context: context,
+          builder: (context) => ContentDialog(
+            title: const Text('Aggiornamenti'),
+            content: const Text('Nessun aggiornamento disponibile.'),
+            actions: [
+              Button(
+                child: const Text('OK'),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ],
+          ),
+        );
       }
-    } catch (_) {}
+    } catch (e) {
+      // Mostra errore se necessario
+      showDialog(
+        context: context,
+        builder: (context) => ContentDialog(
+          title: const Text('Errore'),
+          content: Text('Errore durante il controllo aggiornamenti: $e'),
+          actions: [
+            Button(
+              child: const Text('OK'),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   void _showUpdateAvailableDialog(Map<String, dynamic> release) async {
@@ -416,7 +446,7 @@ class DashboardTab extends StatelessWidget {
   }
 }
 
-class SleepCalculatorTab extends StatelessWidget {
+class SleepCalculatorTab extends StatefulWidget {
   final material.TimeOfDay? selectedTime;
   final bool showSleepCalculator;
   final ValueChanged<material.TimeOfDay> onTimeChanged;
@@ -426,9 +456,169 @@ class SleepCalculatorTab extends StatelessWidget {
       required this.showSleepCalculator,
       required this.onTimeChanged});
   @override
+  State<SleepCalculatorTab> createState() => _SleepCalculatorTabState();
+}
+
+class _SleepCalculatorTabState extends State<SleepCalculatorTab> {
+  material.TimeOfDay? _selectedTime;
+  List<material.TimeOfDay> _results = [];
+  String _calculationType = '';
+  final int _sleepCycleMinutes = 90;
+  final int _fallAsleepMinutes = 15;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedTime = widget.selectedTime;
+  }
+
+  void _onTimeChanged(material.TimeOfDay newTime) {
+    setState(() {
+      _selectedTime = newTime;
+      _results.clear();
+    });
+    widget.onTimeChanged(newTime);
+  }
+
+  void _calculateWakeUpTimes() {
+    setState(() {
+      _calculationType = 'Sveglia';
+      _results.clear();
+      final now = DateTime.now();
+      DateTime bedTime = DateTime(now.year, now.month, now.day,
+          _selectedTime!.hour, _selectedTime!.minute);
+      DateTime fallAsleepTime =
+          bedTime.add(Duration(minutes: _fallAsleepMinutes));
+      for (int i = 6; i >= 3; i--) {
+        final wakeUpTime =
+            fallAsleepTime.add(Duration(minutes: _sleepCycleMinutes * i));
+        _results.add(material.TimeOfDay(
+            hour: wakeUpTime.hour, minute: wakeUpTime.minute));
+      }
+    });
+  }
+
+  void _calculateBedTimes() {
+    setState(() {
+      _calculationType = 'Dormire';
+      _results.clear();
+      final now = DateTime.now();
+      DateTime wakeUpTime = DateTime(now.year, now.month, now.day,
+          _selectedTime!.hour, _selectedTime!.minute);
+      for (int i = 6; i >= 3; i--) {
+        final bedTime =
+            wakeUpTime.subtract(Duration(minutes: _sleepCycleMinutes * i));
+        _results.add(
+            material.TimeOfDay(hour: bedTime.hour, minute: bedTime.minute));
+      }
+    });
+  }
+
+  String _formatTime(material.TimeOfDay time) {
+    final hour = time.hour.toString().padLeft(2, '0');
+    final minute = time.minute.toString().padLeft(2, '0');
+    return '$hour:$minute';
+  }
+
+  Future<void> _selectTime(BuildContext context) async {
+    final picked = await showDialog<material.TimeOfDay>(
+      context: context,
+      builder: (context) => ContentDialog(
+        title: const Text('Scegli orario'),
+        content: TimePicker(
+          selected: _selectedTime != null
+              ? DateTime(0, 1, 1, _selectedTime!.hour, _selectedTime!.minute)
+              : DateTime.now(),
+          onChanged: (dt) {
+            if (dt != null) {
+              Navigator.of(context)
+                  .pop(material.TimeOfDay(hour: dt.hour, minute: dt.minute));
+            }
+          },
+        ),
+        actions: [
+          Button(
+            child: const Text('Annulla'),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ],
+      ),
+    );
+    if (picked != null) {
+      _onTimeChanged(picked);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Qui puoi incollare la UI del calcolatore sonno già pronta, adattata a Fluent UI
-    return Center(child: Text('Calcolatore Sonno qui!'));
+    return Center(
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 400),
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: FluentTheme.of(context).micaBackgroundColor,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Calcolatore del Sonno',
+                style: FluentTheme.of(context).typography.title),
+            const SizedBox(height: 16),
+            Button(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(FluentIcons.clock),
+                  const SizedBox(width: 8),
+                  Text(_selectedTime == null
+                      ? 'Scegli orario'
+                      : 'Orario: ${_formatTime(_selectedTime!)}'),
+                ],
+              ),
+              onPressed: () => _selectTime(context),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Button(
+                  child: const Text('Calcola Sonno'),
+                  onPressed: _selectedTime == null ? null : _calculateBedTimes,
+                ),
+                const SizedBox(width: 12),
+                Button(
+                  child: const Text('Calcola Sveglia'),
+                  onPressed:
+                      _selectedTime == null ? null : _calculateWakeUpTimes,
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            if (_results.isNotEmpty) ...[
+              Text(
+                _calculationType == 'Sveglia'
+                    ? 'Dovresti svegliarti in uno di questi orari:'
+                    : 'Dovresti andare a letto in uno di questi orari:',
+                style: FluentTheme.of(context).typography.subtitle,
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                alignment: WrapAlignment.center,
+                children: _results
+                    .map((t) => InfoBar(
+                          title: Text(_formatTime(t)),
+                          severity: InfoBarSeverity.info,
+                        ))
+                    .toList(),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
   }
 }
 
