@@ -333,6 +333,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         title: const Text('SleepTrack'),
         actions: Row(
           children: [
+            const Spacer(),
             IconButton(
               icon: const Icon(FluentIcons.info),
               onPressed: _showVersionInfo,
@@ -521,28 +522,41 @@ class _SleepCalculatorTabState extends State<SleepCalculatorTab> {
   }
 
   Future<void> _selectTime(BuildContext context) async {
+    DateTime initial = _selectedTime != null
+        ? DateTime(0, 1, 1, _selectedTime!.hour, _selectedTime!.minute)
+        : DateTime.now();
+    DateTime tempSelected = initial;
+
     final picked = await showDialog<material.TimeOfDay>(
       context: context,
-      builder: (context) => ContentDialog(
-        title: const Text('Scegli orario'),
-        content: TimePicker(
-          selected: _selectedTime != null
-              ? DateTime(0, 1, 1, _selectedTime!.hour, _selectedTime!.minute)
-              : DateTime.now(),
-          onChanged: (dt) {
-            if (dt != null) {
-              Navigator.of(context)
-                  .pop(material.TimeOfDay(hour: dt.hour, minute: dt.minute));
-            }
-          },
-        ),
-        actions: [
-          Button(
-            child: const Text('Annulla'),
-            onPressed: () => Navigator.of(context).pop(),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) => ContentDialog(
+            title: const Text('Scegli orario'),
+            content: TimePicker(
+              selected: tempSelected,
+              onChanged: (dt) {
+                if (dt != null) setState(() => tempSelected = dt);
+              },
+            ),
+            actions: [
+              Button(
+                child: const Text('Annulla'),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+              Button(
+                child: const Text('Conferma'),
+                onPressed: () {
+                  Navigator.of(context).pop(
+                    material.TimeOfDay(
+                        hour: tempSelected.hour, minute: tempSelected.minute),
+                  );
+                },
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
     if (picked != null) {
       _onTimeChanged(picked);
