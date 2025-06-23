@@ -666,63 +666,67 @@ class _DashboardTabState extends State<DashboardTab> {
       opacity: 1.0,
       duration: const Duration(milliseconds: 700),
       child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-                widget.updateResult?.isUpdateAvailable == true
-                    ? 'Aggiornamento disponibile!'
-                    : 'App aggiornata',
-                style: const TextStyle(fontSize: 22)),
-            const SizedBox(height: 32),
-            InfoBar(
-              title: Text(
-                widget.updateResult?.isUpdateAvailable == true
-                    ? 'Aggiornamento disponibile!'
-                    : 'App aggiornata',
-                style: const TextStyle(fontSize: 22),
-              ),
-              severity: widget.updateResult?.isUpdateAvailable == true
-                  ? InfoBarSeverity.warning
-                  : InfoBarSeverity.success,
-              action: widget.updateResult?.isUpdateAvailable == true
-                  ? Button(
-                      child: Text('Aggiorna',
-                          style: TextStyle(fontSize: widget.getButtonTextSize)),
-                      onPressed: widget.onCheckUpdate,
-                      style: ButtonStyle(
-                          padding: ButtonState.all(widget.getButtonPadding)),
-                    )
-                  : null,
-            ),
-            if (widget.isDownloading) ...[
-              const SizedBox(height: 24),
-              ProgressBar(
-                value: widget.downloadProgress > 0
-                    ? widget.downloadProgress
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                  widget.updateResult?.isUpdateAvailable == true
+                      ? 'Aggiornamento disponibile!'
+                      : 'App aggiornata',
+                  style: const TextStyle(fontSize: 22)),
+              const SizedBox(height: 32),
+              InfoBar(
+                title: Text(
+                  widget.updateResult?.isUpdateAvailable == true
+                      ? 'Aggiornamento disponibile!'
+                      : 'App aggiornata',
+                  style: const TextStyle(fontSize: 22),
+                ),
+                severity: widget.updateResult?.isUpdateAvailable == true
+                    ? InfoBarSeverity.warning
+                    : InfoBarSeverity.success,
+                action: widget.updateResult?.isUpdateAvailable == true
+                    ? Button(
+                        child: Text('Aggiorna',
+                            style:
+                                TextStyle(fontSize: widget.getButtonTextSize)),
+                        onPressed: widget.onCheckUpdate,
+                        style: ButtonStyle(
+                            padding: ButtonState.all(widget.getButtonPadding)),
+                      )
                     : null,
               ),
+              if (widget.isDownloading) ...[
+                const SizedBox(height: 24),
+                ProgressBar(
+                  value: widget.downloadProgress > 0
+                      ? widget.downloadProgress
+                      : null,
+                ),
+                const SizedBox(height: 16),
+                Text(widget.updateStatus,
+                    style: TextStyle(fontSize: widget.getButtonTextSize)),
+              ],
+              const SizedBox(height: 32),
+              Button(
+                child: Text('Controlla Aggiornamenti',
+                    style: TextStyle(fontSize: widget.getButtonTextSize)),
+                onPressed: widget.onCheckUpdate,
+                style: ButtonStyle(
+                    padding: ButtonState.all(widget.getButtonPadding)),
+              ),
               const SizedBox(height: 16),
-              Text(widget.updateStatus,
-                  style: TextStyle(fontSize: widget.getButtonTextSize)),
+              Button(
+                child: Text('Info App',
+                    style: TextStyle(fontSize: widget.getButtonTextSize)),
+                onPressed: widget.onShowVersionInfo,
+                style: ButtonStyle(
+                    padding: ButtonState.all(widget.getButtonPadding)),
+              ),
             ],
-            const SizedBox(height: 32),
-            Button(
-              child: Text('Controlla Aggiornamenti',
-                  style: TextStyle(fontSize: widget.getButtonTextSize)),
-              onPressed: widget.onCheckUpdate,
-              style: ButtonStyle(
-                  padding: ButtonState.all(widget.getButtonPadding)),
-            ),
-            const SizedBox(height: 16),
-            Button(
-              child: Text('Info App',
-                  style: TextStyle(fontSize: widget.getButtonTextSize)),
-              onPressed: widget.onShowVersionInfo,
-              style: ButtonStyle(
-                  padding: ButtonState.all(widget.getButtonPadding)),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -984,88 +988,91 @@ class _SleepCalculatorTabState extends State<SleepCalculatorTab> {
       opacity: 1.0,
       duration: const Duration(milliseconds: 700),
       child: Center(
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 500),
-          padding: const EdgeInsets.all(32),
-          decoration: BoxDecoration(
-            color: FluentTheme.of(context).micaBackgroundColor,
-            borderRadius: BorderRadius.circular(24),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('Calcolatore del Sonno',
-                  style: FluentTheme.of(context)
-                      .typography
-                      .title
-                      ?.copyWith(fontSize: widget.getTitleSize)),
-              const SizedBox(height: 24),
-              Button(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 500),
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: FluentTheme.of(context).micaBackgroundColor,
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Calcolatore del Sonno',
+                    style: FluentTheme.of(context)
+                        .typography
+                        .title
+                        ?.copyWith(fontSize: widget.getTitleSize)),
+                const SizedBox(height: 24),
+                Button(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(FluentIcons.clock, size: 32),
+                      const SizedBox(width: 12),
+                      Text(
+                          _selectedTime == null
+                              ? 'Scegli orario'
+                              : 'Orario: ${_formatTime(_selectedTime!)}',
+                          style: const TextStyle(fontSize: 22)),
+                    ],
+                  ),
+                  onPressed: () => _selectTime(context),
+                  style: ButtonStyle(
+                      padding: ButtonState.all(widget.getButtonPadding)),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(FluentIcons.clock, size: 32),
-                    const SizedBox(width: 12),
-                    Text(
-                        _selectedTime == null
-                            ? 'Scegli orario'
-                            : 'Orario: ${_formatTime(_selectedTime!)}',
-                        style: const TextStyle(fontSize: 22)),
+                    Button(
+                      child: Text('Calcola Sonno',
+                          style: TextStyle(fontSize: widget.getButtonTextSize)),
+                      onPressed:
+                          _selectedTime == null ? null : _calculateBedTimes,
+                      style: ButtonStyle(
+                          padding: ButtonState.all(widget.getButtonPadding)),
+                    ),
+                    const SizedBox(width: 24),
+                    Button(
+                      child: Text('Calcola Sveglia',
+                          style: TextStyle(fontSize: widget.getButtonTextSize)),
+                      onPressed:
+                          _selectedTime == null ? null : _calculateWakeUpTimes,
+                      style: ButtonStyle(
+                          padding: ButtonState.all(widget.getButtonPadding)),
+                    ),
                   ],
                 ),
-                onPressed: () => _selectTime(context),
-                style: ButtonStyle(
-                    padding: ButtonState.all(widget.getButtonPadding)),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Button(
-                    child: Text('Calcola Sonno',
-                        style: TextStyle(fontSize: widget.getButtonTextSize)),
-                    onPressed:
-                        _selectedTime == null ? null : _calculateBedTimes,
-                    style: ButtonStyle(
-                        padding: ButtonState.all(widget.getButtonPadding)),
+                const SizedBox(height: 32),
+                if (_results.isNotEmpty) ...[
+                  Text(
+                    _calculationType == 'Sveglia'
+                        ? 'Dovresti svegliarti in uno di questi orari:'
+                        : 'Dovresti andare a letto in uno di questi orari:',
+                    style: FluentTheme.of(context)
+                        .typography
+                        .subtitle
+                        ?.copyWith(fontSize: widget.getButtonTextSize),
                   ),
-                  const SizedBox(width: 24),
-                  Button(
-                    child: Text('Calcola Sveglia',
-                        style: TextStyle(fontSize: widget.getButtonTextSize)),
-                    onPressed:
-                        _selectedTime == null ? null : _calculateWakeUpTimes,
-                    style: ButtonStyle(
-                        padding: ButtonState.all(widget.getButtonPadding)),
+                  const SizedBox(height: 16),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    alignment: WrapAlignment.center,
+                    children: _results
+                        .map((t) => InfoBar(
+                              title: Text(_formatTime(t),
+                                  style: const TextStyle(fontSize: 20)),
+                              severity: InfoBarSeverity.info,
+                            ))
+                        .toList(),
                   ),
                 ],
-              ),
-              const SizedBox(height: 32),
-              if (_results.isNotEmpty) ...[
-                Text(
-                  _calculationType == 'Sveglia'
-                      ? 'Dovresti svegliarti in uno di questi orari:'
-                      : 'Dovresti andare a letto in uno di questi orari:',
-                  style: FluentTheme.of(context)
-                      .typography
-                      .subtitle
-                      ?.copyWith(fontSize: widget.getButtonTextSize),
-                ),
-                const SizedBox(height: 16),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  alignment: WrapAlignment.center,
-                  children: _results
-                      .map((t) => InfoBar(
-                            title: Text(_formatTime(t),
-                                style: const TextStyle(fontSize: 20)),
-                            severity: InfoBarSeverity.info,
-                          ))
-                      .toList(),
-                ),
               ],
-            ],
+            ),
           ),
         ),
       ),
@@ -1211,100 +1218,102 @@ class CustomizationTab extends StatelessWidget {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
-      padding: EdgeInsets.all(32.0 * _getScale()),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          AnimatedDefaultTextStyle(
-            duration: const Duration(milliseconds: 300),
-            style: FluentTheme.of(context).typography.title?.copyWith(
-                      fontSize: 28.0 * _getScale(),
-                    ) ??
-                const TextStyle(fontSize: 28),
-            child: const Text('Personalizzazione UI'),
-          ),
-          SizedBox(height: 32.0 * _getScale()),
-          AnimatedDefaultTextStyle(
-            duration: const Duration(milliseconds: 300),
-            style: TextStyle(fontSize: 22.0 * _getScale()),
-            child: const Text('Dimensione contestuale:'),
-          ),
-          SizedBox(height: 16.0 * _getScale()),
-          Row(
-            children: [
-              _buildSizeOption(
-                context,
-                ContextualSize.small,
-                'Piccola',
-                material.Icons.keyboard_arrow_down,
-              ),
-              SizedBox(width: 16.0 * _getScale()),
-              _buildSizeOption(
-                context,
-                ContextualSize.normal,
-                'Normale',
-                material.Icons.radio_button_unchecked,
-              ),
-              SizedBox(width: 16.0 * _getScale()),
-              _buildSizeOption(
-                context,
-                ContextualSize.large,
-                'Grande',
-                material.Icons.keyboard_arrow_up,
-              ),
-            ],
-          ),
-          SizedBox(height: 32.0 * _getScale()),
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            padding: EdgeInsets.all(16.0 * _getScale()),
-            decoration: BoxDecoration(
-              color: FluentTheme.of(context).micaBackgroundColor,
-              borderRadius: BorderRadius.circular(12.0 * _getScale()),
-              border: Border.all(
-                color: FluentTheme.of(context).inactiveBackgroundColor,
-                width: 1.0 * _getScale(),
-              ),
+      child: SingleChildScrollView(
+        padding: EdgeInsets.all(32.0 * _getScale()),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 300),
+              style: FluentTheme.of(context).typography.title?.copyWith(
+                        fontSize: 28.0 * _getScale(),
+                      ) ??
+                  const TextStyle(fontSize: 28),
+              child: const Text('Personalizzazione UI'),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            SizedBox(height: 32.0 * _getScale()),
+            AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 300),
+              style: TextStyle(fontSize: 22.0 * _getScale()),
+              child: const Text('Dimensione contestuale:'),
+            ),
+            SizedBox(height: 16.0 * _getScale()),
+            Row(
               children: [
-                AnimatedDefaultTextStyle(
-                  duration: const Duration(milliseconds: 300),
-                  style: TextStyle(
-                    fontSize: 18.0 * _getScale(),
-                    fontWeight: FontWeight.w600,
-                  ),
-                  child: const Text('Anteprima'),
+                _buildSizeOption(
+                  context,
+                  ContextualSize.small,
+                  'Piccola',
+                  material.Icons.keyboard_arrow_down,
                 ),
-                SizedBox(height: 12.0 * _getScale()),
-                AnimatedDefaultTextStyle(
-                  duration: const Duration(milliseconds: 300),
-                  style: TextStyle(fontSize: 14.0 * _getScale()),
-                  child: const Text(
-                      'Questa è un\'anteprima di come apparirà il testo con la dimensione selezionata.'),
+                SizedBox(width: 16.0 * _getScale()),
+                _buildSizeOption(
+                  context,
+                  ContextualSize.normal,
+                  'Normale',
+                  material.Icons.radio_button_unchecked,
                 ),
-                SizedBox(height: 16.0 * _getScale()),
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  child: Button(
-                    child: Text(
-                      'Pulsante di esempio',
-                      style: TextStyle(fontSize: 16.0 * _getScale()),
-                    ),
-                    onPressed: () {},
-                    style: ButtonStyle(
-                      padding: ButtonState.all(EdgeInsets.symmetric(
-                        horizontal: 24.0 * _getScale(),
-                        vertical: 12.0 * _getScale(),
-                      )),
-                    ),
-                  ),
+                SizedBox(width: 16.0 * _getScale()),
+                _buildSizeOption(
+                  context,
+                  ContextualSize.large,
+                  'Grande',
+                  material.Icons.keyboard_arrow_up,
                 ),
               ],
             ),
-          ),
-        ],
+            SizedBox(height: 32.0 * _getScale()),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              padding: EdgeInsets.all(16.0 * _getScale()),
+              decoration: BoxDecoration(
+                color: FluentTheme.of(context).micaBackgroundColor,
+                borderRadius: BorderRadius.circular(12.0 * _getScale()),
+                border: Border.all(
+                  color: FluentTheme.of(context).inactiveBackgroundColor,
+                  width: 1.0 * _getScale(),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  AnimatedDefaultTextStyle(
+                    duration: const Duration(milliseconds: 300),
+                    style: TextStyle(
+                      fontSize: 18.0 * _getScale(),
+                      fontWeight: FontWeight.w600,
+                    ),
+                    child: const Text('Anteprima'),
+                  ),
+                  SizedBox(height: 12.0 * _getScale()),
+                  AnimatedDefaultTextStyle(
+                    duration: const Duration(milliseconds: 300),
+                    style: TextStyle(fontSize: 14.0 * _getScale()),
+                    child: const Text(
+                        'Questa è un\'anteprima di come apparirà il testo con la dimensione selezionata.'),
+                  ),
+                  SizedBox(height: 16.0 * _getScale()),
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    child: Button(
+                      child: Text(
+                        'Pulsante di esempio',
+                        style: TextStyle(fontSize: 16.0 * _getScale()),
+                      ),
+                      onPressed: () {},
+                      style: ButtonStyle(
+                        padding: ButtonState.all(EdgeInsets.symmetric(
+                          horizontal: 24.0 * _getScale(),
+                          vertical: 12.0 * _getScale(),
+                        )),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
