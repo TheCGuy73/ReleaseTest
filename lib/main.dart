@@ -290,8 +290,45 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
                 _showVersionInfo();
               } else if (value == 'check_update') {
                 _checkForUpdates();
-              } else if (value == 'toggle_theme') {
-                widget.onThemeModeChanged(ThemeMode.system);
+              } else if (value == 'theme_menu') {
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Seleziona tema'),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        RadioListTile<ThemeMode>(
+                          value: ThemeMode.system,
+                          groupValue: widget.themeMode,
+                          onChanged: (mode) {
+                            if (mode != null) widget.onThemeModeChanged(mode);
+                            Navigator.of(context).pop();
+                          },
+                          title: const Text('Automatico (Sistema)'),
+                        ),
+                        RadioListTile<ThemeMode>(
+                          value: ThemeMode.light,
+                          groupValue: widget.themeMode,
+                          onChanged: (mode) {
+                            if (mode != null) widget.onThemeModeChanged(mode);
+                            Navigator.of(context).pop();
+                          },
+                          title: const Text('Chiaro'),
+                        ),
+                        RadioListTile<ThemeMode>(
+                          value: ThemeMode.dark,
+                          groupValue: widget.themeMode,
+                          onChanged: (mode) {
+                            if (mode != null) widget.onThemeModeChanged(mode);
+                            Navigator.of(context).pop();
+                          },
+                          title: const Text('Scuro'),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
               }
             },
             itemBuilder: (BuildContext context) {
@@ -311,43 +348,10 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
                   ),
                 ),
                 PopupMenuItem<String>(
-                  enabled: false,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 4.0),
-                        child: Text('Tema',
-                            style: TextStyle(fontWeight: FontWeight.bold)),
-                      ),
-                      RadioListTile<ThemeMode>(
-                        value: ThemeMode.system,
-                        groupValue: widget.themeMode,
-                        onChanged: (mode) {
-                          if (mode != null) widget.onThemeModeChanged(mode);
-                          Navigator.of(context).pop();
-                        },
-                        title: const Text('Automatico (Sistema)'),
-                      ),
-                      RadioListTile<ThemeMode>(
-                        value: ThemeMode.light,
-                        groupValue: widget.themeMode,
-                        onChanged: (mode) {
-                          if (mode != null) widget.onThemeModeChanged(mode);
-                          Navigator.of(context).pop();
-                        },
-                        title: const Text('Chiaro'),
-                      ),
-                      RadioListTile<ThemeMode>(
-                        value: ThemeMode.dark,
-                        groupValue: widget.themeMode,
-                        onChanged: (mode) {
-                          if (mode != null) widget.onThemeModeChanged(mode);
-                          Navigator.of(context).pop();
-                        },
-                        title: const Text('Scuro'),
-                      ),
-                    ],
+                  value: 'theme_menu',
+                  child: ListTile(
+                    leading: Icon(Icons.color_lens),
+                    title: const Text('Tema'),
                   ),
                 ),
               ];
@@ -366,85 +370,171 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
                   Text(_updateStatus),
                 ],
               )
-            : Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _selectedTime == null
-                      ? ElevatedButton.icon(
-                          icon: const Icon(Icons.access_time),
-                          label: const Text('Scegli orario'),
-                          onPressed: () async {
-                            final picked = await showTimePicker(
-                              context: context,
-                              initialTime: TimeOfDay.now(),
-                              builder: (context, child) {
-                                return MediaQuery(
-                                  data: MediaQuery.of(context)
-                                      .copyWith(alwaysUse24HourFormat: true),
-                                  child: child!,
-                                );
-                              },
-                            );
-                            if (picked != null) {
-                              _onTimeChanged(picked);
-                            }
-                          },
-                        )
-                      : TimePicker(
-                          initialTime: _selectedTime!,
-                          onTimeChanged: _onTimeChanged,
-                        ),
-                  const SizedBox(height: 20),
-                  if (_showSleepCalculator && _selectedTime != null)
-                    Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'Calcolatore del Sonno',
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.keyboard_arrow_up),
-                              tooltip: 'Nascondi',
-                              onPressed: () {
-                                setState(() {
-                                  _showSleepCalculator = false;
-                                });
-                              },
+            : SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0, vertical: 24.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 400),
+                        curve: Curves.easeInOut,
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surface,
+                          borderRadius: BorderRadius.circular(18),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Theme.of(context)
+                                  .shadowColor
+                                  .withOpacity(0.08),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
                             ),
                           ],
                         ),
-                        SleepCalculator(timeToCalculate: _selectedTime!),
-                      ],
-                    )
-                  else if (_selectedTime != null)
-                    IconButton(
-                      icon: const Icon(Icons.keyboard_arrow_down),
-                      tooltip: 'Mostra calcolatore del sonno',
-                      onPressed: () {
-                        setState(() {
-                          _showSleepCalculator = true;
-                        });
-                      },
-                    ),
-                  const SizedBox(height: 24),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                    child: Text(
-                      'Tutte le funzionalità qui presenti sono in fase di testing, usale con cautela, a tuo rischio',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontStyle: FontStyle.italic,
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withOpacity(0.7),
+                        child: Column(
+                          children: [
+                            _selectedTime == null
+                                ? ElevatedButton.icon(
+                                    icon: const Icon(Icons.access_time),
+                                    label: const Text('Scegli orario'),
+                                    style: ElevatedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 32, vertical: 16),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                    onPressed: () async {
+                                      final picked = await showTimePicker(
+                                        context: context,
+                                        initialTime: TimeOfDay.now(),
+                                        builder: (context, child) {
+                                          return MediaQuery(
+                                            data: MediaQuery.of(context)
+                                                .copyWith(
+                                                    alwaysUse24HourFormat:
+                                                        true),
+                                            child: child!,
+                                          );
+                                        },
+                                      );
+                                      if (picked != null) {
+                                        _onTimeChanged(picked);
+                                      }
+                                    },
+                                  )
+                                : Column(
+                                    children: [
+                                      Text(
+                                        'Orario selezionato:',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleSmall,
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Card(
+                                        elevation: 2,
+                                        shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(10)),
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .primaryContainer,
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 24, vertical: 12),
+                                          child: Text(
+                                            '${_selectedTime!.hour.toString().padLeft(2, '0')}:${_selectedTime!.minute.toString().padLeft(2, '0')}',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .displayMedium
+                                                ?.copyWith(
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .onPrimaryContainer,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 10),
+                                      TimePicker(
+                                        initialTime: _selectedTime!,
+                                        onTimeChanged: _onTimeChanged,
+                                      ),
+                                    ],
+                                  ),
+                            const SizedBox(height: 20),
+                            AnimatedCrossFade(
+                              duration: const Duration(milliseconds: 400),
+                              crossFadeState: (_showSleepCalculator &&
+                                      _selectedTime != null)
+                                  ? CrossFadeState.showFirst
+                                  : CrossFadeState.showSecond,
+                              firstChild: Column(
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        'Calcolatore del Sonno',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleMedium,
+                                      ),
+                                      IconButton(
+                                        icon:
+                                            const Icon(Icons.keyboard_arrow_up),
+                                        tooltip: 'Nascondi',
+                                        onPressed: () {
+                                          setState(() {
+                                            _showSleepCalculator = false;
+                                          });
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                  SleepCalculator(
+                                      timeToCalculate: _selectedTime!),
+                                ],
+                              ),
+                              secondChild: _selectedTime != null
+                                  ? IconButton(
+                                      icon:
+                                          const Icon(Icons.keyboard_arrow_down),
+                                      tooltip: 'Mostra calcolatore del sonno',
+                                      onPressed: () {
+                                        setState(() {
+                                          _showSleepCalculator = true;
+                                        });
+                                      },
+                                    )
+                                  : const SizedBox.shrink(),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 32),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                        child: Text(
+                          'Tutte le funzionalità qui presenti sono in fase di testing, usale con cautela, a tuo rischio',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontStyle: FontStyle.italic,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withOpacity(0.7),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
       ),
     );
