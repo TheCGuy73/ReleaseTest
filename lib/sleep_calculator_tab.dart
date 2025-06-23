@@ -1,5 +1,7 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/material.dart' as material;
+import 'package:android_intent_plus/android_intent.dart';
+import 'package:installed_apps/installed_apps.dart';
 
 class SleepCalculatorTab extends StatefulWidget {
   final material.TimeOfDay? selectedTime;
@@ -104,7 +106,94 @@ class _SleepCalculatorTabState extends State<SleepCalculatorTab> {
       ),
     );
     if (res == true) {
-      // Implementazione per impostare la sveglia
+      // Verifica se esiste l'app orologio (Google Clock)
+      const clockAppPackage = 'com.google.android.deskclock';
+      final isInstalled = await InstalledApps.isAppInstalled(clockAppPackage);
+      if (isInstalled != true) {
+        showDialog(
+          context: context,
+          builder: (context) => ContentDialog(
+            title: const Text('Errore'),
+            content: const Text(
+                'Per impostare la sveglia è necessaria l\'app Google Orologio.'),
+            actions: [
+              Button(
+                child: const Text('OK'),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ],
+          ),
+        );
+        return;
+      }
+      // Mostra dialog per selezionare l'orario
+      final selected = await showDialog<material.TimeOfDay>(
+        context: context,
+        builder: (context) => ContentDialog(
+          title: const Text('Scegli Orario Sveglia'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: _results
+                .map((t) => Button(
+                      child: Text(_formatTime(t)),
+                      onPressed: () => Navigator.of(context).pop(t),
+                    ))
+                .toList(),
+          ),
+          actions: [
+            Button(
+              child: const Text('Annulla'),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ],
+        ),
+      );
+      if (selected != null) {
+        final intent = AndroidIntent(
+          action: 'android.intent.action.SET_ALARM',
+          arguments: <String, dynamic>{
+            'android.intent.extra.alarm.HOUR': selected.hour,
+            'android.intent.extra.alarm.MINUTES': selected.minute,
+            'android.intent.extra.alarm.MESSAGE': 'Sveglia da SleepTrack',
+            'android.intent.extra.alarm.SKIP_UI': false,
+          },
+        );
+        try {
+          await intent.launch();
+          if (mounted) {
+            showDialog(
+              context: context,
+              builder: (context) => ContentDialog(
+                title: const Text('Sveglia impostata'),
+                content:
+                    Text('Sveglia impostata per le ${_formatTime(selected)}.'),
+                actions: [
+                  Button(
+                    child: const Text('OK'),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
+              ),
+            );
+          }
+        } catch (e) {
+          if (mounted) {
+            showDialog(
+              context: context,
+              builder: (context) => ContentDialog(
+                title: const Text('Errore'),
+                content: Text('Impossibile impostare la sveglia: $e'),
+                actions: [
+                  Button(
+                    child: const Text('OK'),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
+              ),
+            );
+          }
+        }
+      }
     }
   }
 
