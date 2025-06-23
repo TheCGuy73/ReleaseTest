@@ -374,165 +374,179 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 16.0, vertical: 24.0),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 400),
-                        curve: Curves.easeInOut,
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surface,
-                          borderRadius: BorderRadius.circular(18),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Theme.of(context)
-                                  .shadowColor
-                                  .withOpacity(0.08),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
+                  child: Builder(
+                    builder: (context) {
+                      // Fallback: se non c'è nulla da mostrare, mostra un messaggio
+                      final mainContent = Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 400),
+                            curve: Curves.easeInOut,
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.surface,
+                              borderRadius: BorderRadius.circular(18),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Theme.of(context)
+                                      .shadowColor
+                                      .withOpacity(0.08),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                        child: Column(
-                          children: [
-                            _selectedTime == null
-                                ? ElevatedButton.icon(
-                                    icon: const Icon(Icons.access_time),
-                                    label: const Text('Scegli orario'),
-                                    style: ElevatedButton.styleFrom(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 32, vertical: 16),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                    ),
-                                    onPressed: () async {
-                                      final picked = await showTimePicker(
-                                        context: context,
-                                        initialTime: TimeOfDay.now(),
-                                        builder: (context, child) {
-                                          return MediaQuery(
-                                            data: MediaQuery.of(context)
-                                                .copyWith(
-                                                    alwaysUse24HourFormat:
-                                                        true),
-                                            child: child!,
-                                          );
-                                        },
-                                      );
-                                      if (picked != null) {
-                                        _onTimeChanged(picked);
-                                      }
-                                    },
-                                  )
-                                : Column(
-                                    children: [
-                                      Text(
-                                        'Orario selezionato:',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleSmall,
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Card(
-                                        elevation: 2,
-                                        shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(10)),
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .primaryContainer,
-                                        child: Padding(
+                            child: Column(
+                              children: [
+                                _selectedTime == null
+                                    ? ElevatedButton.icon(
+                                        icon: const Icon(Icons.access_time),
+                                        label: const Text('Scegli orario'),
+                                        style: ElevatedButton.styleFrom(
                                           padding: const EdgeInsets.symmetric(
-                                              horizontal: 24, vertical: 12),
-                                          child: Text(
-                                            '${_selectedTime!.hour.toString().padLeft(2, '0')}:${_selectedTime!.minute.toString().padLeft(2, '0')}',
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .displayMedium
-                                                ?.copyWith(
-                                                  color: Theme.of(context)
-                                                      .colorScheme
-                                                      .onPrimaryContainer,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
+                                              horizontal: 32, vertical: 16),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(12),
                                           ),
                                         ),
-                                      ),
-                                      const SizedBox(height: 10),
-                                      TimePicker(
-                                        initialTime: _selectedTime!,
-                                        onTimeChanged: _onTimeChanged,
-                                      ),
-                                    ],
-                                  ),
-                            const SizedBox(height: 20),
-                            AnimatedCrossFade(
-                              duration: const Duration(milliseconds: 400),
-                              crossFadeState: (_showSleepCalculator &&
-                                      _selectedTime != null)
-                                  ? CrossFadeState.showFirst
-                                  : CrossFadeState.showSecond,
-                              firstChild: Column(
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        'Calcolatore del Sonno',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleMedium,
-                                      ),
-                                      IconButton(
-                                        icon:
-                                            const Icon(Icons.keyboard_arrow_up),
-                                        tooltip: 'Nascondi',
-                                        onPressed: () {
-                                          setState(() {
-                                            _showSleepCalculator = false;
-                                          });
+                                        onPressed: () async {
+                                          final picked = await showTimePicker(
+                                            context: context,
+                                            initialTime: TimeOfDay.now(),
+                                            builder: (context, child) {
+                                              return MediaQuery(
+                                                data: MediaQuery.of(context)
+                                                    .copyWith(
+                                                        alwaysUse24HourFormat:
+                                                            true),
+                                                child: child!,
+                                              );
+                                            },
+                                          );
+                                          if (picked != null) {
+                                            _onTimeChanged(picked);
+                                          }
                                         },
+                                      )
+                                    : Column(
+                                        children: [
+                                          Text(
+                                            'Orario selezionato:',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .titleSmall,
+                                          ),
+                                          const SizedBox(height: 6),
+                                          Card(
+                                            elevation: 2,
+                                            shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(10)),
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .primaryContainer,
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 24,
+                                                      vertical: 12),
+                                              child: Text(
+                                                '${_selectedTime!.hour.toString().padLeft(2, '0')}:${_selectedTime!.minute.toString().padLeft(2, '0')}',
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .displayMedium
+                                                    ?.copyWith(
+                                                      color: Theme.of(context)
+                                                          .colorScheme
+                                                          .onPrimaryContainer,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 10),
+                                          TimePicker(
+                                            initialTime: _selectedTime!,
+                                            onTimeChanged: _onTimeChanged,
+                                          ),
+                                        ],
                                       ),
+                                const SizedBox(height: 20),
+                                AnimatedCrossFade(
+                                  duration: const Duration(milliseconds: 400),
+                                  crossFadeState: (_showSleepCalculator &&
+                                          _selectedTime != null)
+                                      ? CrossFadeState.showFirst
+                                      : CrossFadeState.showSecond,
+                                  firstChild: Column(
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Text(
+                                            'Calcolatore del Sonno',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .titleMedium,
+                                          ),
+                                          IconButton(
+                                            icon: const Icon(
+                                                Icons.keyboard_arrow_up),
+                                            tooltip: 'Nascondi',
+                                            onPressed: () {
+                                              setState(() {
+                                                _showSleepCalculator = false;
+                                              });
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                      if (_selectedTime != null)
+                                        SleepCalculator(
+                                            timeToCalculate: _selectedTime!),
                                     ],
                                   ),
-                                  SleepCalculator(
-                                      timeToCalculate: _selectedTime!),
-                                ],
-                              ),
-                              secondChild: _selectedTime != null
-                                  ? IconButton(
-                                      icon:
-                                          const Icon(Icons.keyboard_arrow_down),
-                                      tooltip: 'Mostra calcolatore del sonno',
-                                      onPressed: () {
-                                        setState(() {
-                                          _showSleepCalculator = true;
-                                        });
-                                      },
-                                    )
-                                  : const SizedBox.shrink(),
+                                  secondChild: _selectedTime != null
+                                      ? IconButton(
+                                          icon: const Icon(
+                                              Icons.keyboard_arrow_down),
+                                          tooltip:
+                                              'Mostra calcolatore del sonno',
+                                          onPressed: () {
+                                            setState(() {
+                                              _showSleepCalculator = true;
+                                            });
+                                          },
+                                        )
+                                      : const SizedBox.shrink(),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 32),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                        child: Text(
-                          'Tutte le funzionalità qui presenti sono in fase di testing, usale con cautela, a tuo rischio',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontStyle: FontStyle.italic,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withOpacity(0.7),
                           ),
-                        ),
-                      ),
-                    ],
+                          const SizedBox(height: 32),
+                          Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 8.0),
+                            child: Text(
+                              'Tutte le funzionalità qui presenti sono in fase di testing, usale con cautela, a tuo rischio',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontStyle: FontStyle.italic,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withOpacity(0.7),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                      return mainContent;
+                    },
                   ),
                 ),
               ),
