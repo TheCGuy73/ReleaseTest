@@ -1,6 +1,4 @@
-# Release Test App
-
-A Flutter application that demonstrates how to implement automatic updates via GitHub Releases.
+# SleepTrack
 
 ## Features
 
