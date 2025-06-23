@@ -610,6 +610,12 @@ class _DashboardTabState extends State<DashboardTab> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              Text(_displayedText,
+                  style: FluentTheme.of(context)
+                      .typography
+                      .title
+                      ?.copyWith(fontSize: widget.getTitleSize)),
+              const SizedBox(height: 32),
               Text(
                   widget.updateResult?.isUpdateAvailable == true
                       ? 'Aggiornamento disponibile!'
