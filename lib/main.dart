@@ -369,76 +369,41 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     });
   }
 
-  double getContextualScale() {
-    switch (_contextualSize) {
-      case ContextualSize.small:
-        return 0.8;
-      case ContextualSize.normal:
-        return 1.0;
-      case ContextualSize.large:
-        return 1.3;
-    }
-  }
+  double getGlobalScale() => 1.2;
 
   double getTextSize() {
-    final baseSize = switch (_textSize) {
-      TextSize.small => 14.0,
-      TextSize.normal => 18.0,
-      TextSize.large => 24.0,
-    };
-    return baseSize * getContextualScale();
+    final baseSize = 18.0;
+    return baseSize * getGlobalScale();
   }
 
   double getTitleSize() {
-    final baseSize = switch (_textSize) {
-      TextSize.small => 20.0,
-      TextSize.normal => 26.0,
-      TextSize.large => 32.0,
-    };
-    return baseSize * getContextualScale();
+    final baseSize = 28.0;
+    return baseSize * getGlobalScale();
   }
 
   double getButtonTextSize() {
-    final baseSize = switch (_textSize) {
-      TextSize.small => 14.0,
-      TextSize.normal => 18.0,
-      TextSize.large => 22.0,
-    };
-    return baseSize * getContextualScale();
+    final baseSize = 20.0;
+    return baseSize * getGlobalScale();
   }
 
   double getIconSize() {
-    final baseSize = switch (_widgetSize) {
-      WidgetSize.small => 18.0,
-      WidgetSize.normal => 28.0,
-      WidgetSize.large => 36.0,
-    };
-    return baseSize * getContextualScale();
+    final baseSize = 32.0;
+    return baseSize * getGlobalScale();
   }
 
   EdgeInsets getButtonPadding() {
-    final basePadding = switch (_widgetSize) {
-      WidgetSize.small =>
-        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      WidgetSize.normal =>
-        const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-      WidgetSize.large =>
-        const EdgeInsets.symmetric(horizontal: 32, vertical: 18),
-    };
-    final scale = getContextualScale();
+    final basePadding =
+        const EdgeInsets.symmetric(horizontal: 28, vertical: 16);
+    final scale = getGlobalScale();
     return EdgeInsets.symmetric(
       horizontal: basePadding.horizontal * scale,
       vertical: basePadding.vertical * scale,
     );
   }
 
-  double getSpacing() {
-    return 16.0 * getContextualScale();
-  }
+  double getSpacing() => 20.0 * getGlobalScale();
 
-  double getLargeSpacing() {
-    return 32.0 * getContextualScale();
-  }
+  double getLargeSpacing() => 36.0 * getGlobalScale();
 
   List<Tab> buildTabs(BuildContext context) {
     bool isMobile = defaultTargetPlatform == TargetPlatform.android ||
