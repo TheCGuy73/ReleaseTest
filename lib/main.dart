@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' as material;
+import 'package:fluent_ui/fluent_ui.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:installed_apps/installed_apps.dart';
@@ -30,20 +31,26 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Sleep Calculator',
-      theme: ThemeData(
-        brightness: Brightness.light,
-        colorSchemeSeed: Colors.blue,
-        useMaterial3: true,
-      ),
-      darkTheme: ThemeData(
-        brightness: Brightness.dark,
-        colorSchemeSeed: Colors.blue,
-        useMaterial3: true,
-      ),
+    return FluentApp(
+      title: 'SleepTrack',
       themeMode: _themeMode,
-      home: MyHomePage(
+      theme: FluentThemeData(
+        brightness: Brightness.light,
+        accentColor: AccentColor.swatch({
+          'normal': material.Colors.blue.shade500,
+          'dark': material.Colors.blue.shade700,
+          'light': material.Colors.blue.shade200,
+        }),
+      ),
+      darkTheme: FluentThemeData(
+        brightness: Brightness.dark,
+        accentColor: AccentColor.swatch({
+          'normal': material.Colors.blue.shade500,
+          'dark': material.Colors.blue.shade700,
+          'light': material.Colors.blue.shade200,
+        }),
+      ),
+      home: MainScreen(
         themeMode: _themeMode,
         onThemeModeChanged: _setThemeMode,
       ),
@@ -51,29 +58,31 @@ class _MyAppState extends State<MyApp> {
   }
 }
 
-class MyHomePage extends StatefulWidget {
+class MainScreen extends StatefulWidget {
   final ThemeMode themeMode;
   final ValueChanged<ThemeMode> onThemeModeChanged;
 
-  const MyHomePage({
+  const MainScreen({
     super.key,
     required this.themeMode,
     required this.onThemeModeChanged,
   });
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<MainScreen> createState() => _MainScreenState();
 }
 
-class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
+class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
+  int _currentIndex = 0;
   late final UpdateService _updateService;
   UpdateResult? _updateResult;
   bool _isDownloading = false;
   double _downloadProgress = 0.0;
   String _updateStatus = '';
-  TimeOfDay? _selectedTime;
+  material.TimeOfDay? _selectedTime;
   Map<String, dynamic>? _pendingUpdateRelease;
   bool _showSleepCalculator = false;
+  List<Map<String, dynamic>> _releaseHistory = [];
 
   @override
   void initState() {
@@ -83,7 +92,7 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
       githubRepo: 'ReleaseTest',
     );
     WidgetsBinding.instance.addObserver(this);
-    // Controlla automaticamente gli aggiornamenti all'avvio
+    _fetchReleaseHistory();
     _checkForUpdates(isAutomatic: true);
   }
 
@@ -112,34 +121,33 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
     }
   }
 
-  // Controlla gli aggiornamenti
+  Future<void> _fetchReleaseHistory() async {
+    try {
+      final releases = await _updateService.fetchAllReleases();
+      setState(() {
+        _releaseHistory = releases;
+      });
+    } catch (_) {}
+  }
+
   Future<void> _checkForUpdates({bool isAutomatic = false}) async {
     try {
       final result = await _updateService.checkForUpdates();
       setState(() {
         _updateResult = result;
       });
-
-      if (result.isUpdateAvailable) {
+      if (result.isUpdateAvailable && !isAutomatic) {
         _showUpdateAvailableDialog(result.release!);
-      } else if (!isAutomatic) {
-        _showSnackBar('Nessun aggiornamento disponibile.');
       }
-    } catch (e) {
-      if (!isAutomatic) {
-        _showSnackBar('Errore durante il controllo: ${e.toString()}');
-      }
-    }
+    } catch (_) {}
   }
 
-  // Mostra il dialogo di aggiornamento
   void _showUpdateAvailableDialog(Map<String, dynamic> release) async {
     final packageInfo = await PackageInfo.fromPlatform();
     final currentVersion = packageInfo.version;
-
-    showDialog(
+    material.showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => material.AlertDialog(
         title: const Text('Aggiornamento Disponibile'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -151,18 +159,11 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
           ],
         ),
         actions: [
-          TextButton(
+          material.TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('Dopo'),
           ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              _showDowngradeDialog(currentVersion);
-            },
-            child: const Text('Downgrade'),
-          ),
-          ElevatedButton(
+          material.ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
               _initiateUpdateProcess(release);
@@ -174,100 +175,35 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
     );
   }
 
-  void _showDowngradeDialog(String currentVersion) async {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) {
-        return FutureBuilder<List<Map<String, dynamic>>>(
-          future: _updateService.fetchAllReleases(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const AlertDialog(
-                title: Text('Downgrade'),
-                content: SizedBox(
-                  height: 80,
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-              );
-            }
-            if (snapshot.hasError) {
-              return AlertDialog(
-                title: const Text('Downgrade'),
-                content: Text('Errore: ${snapshot.error}'),
-              );
-            }
-            final releases = snapshot.data ?? [];
-            final previousReleases = releases.where((r) {
-              final tag = r['tag_name'] ?? '';
-              return tag != currentVersion;
-            }).toList();
-            if (previousReleases.isEmpty) {
-              return const AlertDialog(
-                title: Text('Downgrade'),
-                content: Text('Nessuna versione precedente trovata.'),
-              );
-            }
-            return AlertDialog(
-              title: const Text('Seleziona versione per il downgrade'),
-              content: SizedBox(
-                width: 300,
-                height: 300,
-                child: ListView.builder(
-                  itemCount: previousReleases.length,
-                  itemBuilder: (context, index) {
-                    final rel = previousReleases[index];
-                    return ListTile(
-                      title: Text(rel['tag_name'] ?? ''),
-                      subtitle: Text(rel['name'] ?? ''),
-                      onTap: () {
-                        Navigator.of(context).pop();
-                        _initiateUpdateProcess(rel);
-                      },
-                    );
-                  },
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
   Future<void> _initiateUpdateProcess(Map<String, dynamic> release) async {
     bool hasPermission = await Permission.requestInstallPackages.isGranted;
-
     if (hasPermission) {
       _downloadAndInstallUpdate(release);
     } else {
       setState(() {
         _pendingUpdateRelease = release;
       });
-
-      final result = await showDialog<bool>(
+      final result = await material.showDialog<bool>(
         context: context,
-        builder: (context) => AlertDialog(
+        builder: (context) => material.AlertDialog(
           title: const Text('Permesso Richiesto'),
           content: const Text(
             'Per aggiornare l\'app, è necessario autorizzare l\'installazione. Verrai reindirizzato alle impostazioni per concedere il permesso.',
           ),
           actions: [
-            TextButton(
+            material.TextButton(
               onPressed: () => Navigator.of(context).pop(false),
               child: const Text('Annulla'),
             ),
-            ElevatedButton(
+            material.ElevatedButton(
               onPressed: () => Navigator.of(context).pop(true),
               child: const Text('Vai alle Impostazioni'),
             ),
           ],
         ),
       );
-
       if (result == true) {
         await openAppSettings();
-        // L'aggiornamento riprenderà automaticamente quando l'utente torna all'app.
       } else {
         setState(() {
           _pendingUpdateRelease = null;
@@ -276,27 +212,23 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
     }
   }
 
-  // Scarica e installa l'aggiornamento
   Future<void> _downloadAndInstallUpdate(Map<String, dynamic> release) async {
     setState(() {
       _isDownloading = true;
       _updateStatus = 'Download in corso...';
       _downloadProgress = 0.0;
     });
-
     try {
       await _updateService.downloadAndInstallUpdate(release, (progress) {
         setState(() {
           _downloadProgress = progress;
           _updateStatus =
-              'Download: ${(_downloadProgress * 100).toStringAsFixed(1)}%';
+              'Download: \\${(_downloadProgress * 100).toStringAsFixed(1)}%';
         });
       });
-
       _updateStatus = 'Download completato. Avvio installazione...';
     } catch (e) {
-      _updateStatus = 'Errore durante il download: ${e.toString()}';
-      _showSnackBar('Errore: ${e.toString()}');
+      _updateStatus = 'Errore durante il download: \\${e.toString()}';
     } finally {
       setState(() {
         _isDownloading = false;
@@ -304,21 +236,14 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
     }
   }
 
-  void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
-  }
-
-  // Funzione per mostrare le informazioni sulla versione
   void _showVersionInfo() async {
     final packageInfo = await PackageInfo.fromPlatform();
     final appName = packageInfo.appName;
     final version = packageInfo.version;
     final buildNumber = packageInfo.buildNumber;
-
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => ContentDialog(
         title: Text('Informazioni su $appName'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -329,373 +254,103 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+          Button(
             child: const Text('Chiudi'),
+            onPressed: () => Navigator.of(context).pop(),
           ),
         ],
       ),
     );
   }
 
-  void _onTimeChanged(TimeOfDay newTime) {
+  void _onTimeChanged(material.TimeOfDay newTime) {
     setState(() {
       _selectedTime = newTime;
       _showSleepCalculator = true;
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        leading: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Image.asset(
-            'assets/icon/icon.png',
-            fit: BoxFit.contain,
-            height: 32,
-            width: 32,
-          ),
+  List<Widget> get _tabs => [
+        DashboardTab(
+          updateResult: _updateResult,
+          isDownloading: _isDownloading,
+          downloadProgress: _downloadProgress,
+          updateStatus: _updateStatus,
+          onCheckUpdate: _checkForUpdates,
+          onShowVersionInfo: _showVersionInfo,
         ),
-        title: const Text('SleepTrack'),
-        centerTitle: true,
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        actions: [
-          PopupMenuButton<String>(
-            onSelected: (value) {
-              if (value == 'show_version') {
-                _showVersionInfo();
-              } else if (value == 'check_update') {
-                _checkForUpdates();
-              } else if (value == 'theme_menu') {
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Seleziona tema'),
-                    content: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        RadioListTile<ThemeMode>(
-                          value: ThemeMode.system,
-                          groupValue: widget.themeMode,
-                          onChanged: (mode) {
-                            if (mode != null) widget.onThemeModeChanged(mode);
-                            Navigator.of(context).pop();
-                          },
-                          title: const Text('Automatico (Sistema)'),
-                        ),
-                        RadioListTile<ThemeMode>(
-                          value: ThemeMode.light,
-                          groupValue: widget.themeMode,
-                          onChanged: (mode) {
-                            if (mode != null) widget.onThemeModeChanged(mode);
-                            Navigator.of(context).pop();
-                          },
-                          title: const Text('Chiaro'),
-                        ),
-                        RadioListTile<ThemeMode>(
-                          value: ThemeMode.dark,
-                          groupValue: widget.themeMode,
-                          onChanged: (mode) {
-                            if (mode != null) widget.onThemeModeChanged(mode);
-                            Navigator.of(context).pop();
-                          },
-                          title: const Text('Scuro'),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }
-            },
-            itemBuilder: (BuildContext context) {
-              return [
-                const PopupMenuItem<String>(
-                  value: 'show_version',
-                  child: ListTile(
-                    leading: Icon(Icons.info_outline),
-                    title: Text('Mostra Versione'),
-                  ),
-                ),
-                const PopupMenuItem<String>(
-                  value: 'check_update',
-                  child: ListTile(
-                    leading: Icon(Icons.sync),
-                    title: Text('Controlla Aggiornamenti'),
-                  ),
-                ),
-                PopupMenuItem<String>(
-                  value: 'theme_menu',
-                  child: ListTile(
-                    leading: Icon(Icons.color_lens),
-                    title: const Text('Tema'),
-                  ),
-                ),
-              ];
-            },
-          ),
-        ],
-      ),
-      body: Center(
-        child: _isDownloading
-            ? Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(
-                      value: _downloadProgress > 0 ? _downloadProgress : null),
-                  const SizedBox(height: 20),
-                  Text(_updateStatus),
-                ],
-              )
-            : SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16.0, vertical: 24.0),
-                  child: Builder(
-                    builder: (context) {
-                      // Fallback: se non c'è nulla da mostrare, mostra un messaggio
-                      final mainContent = Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          AnimatedContainer(
-                            duration: const Duration(milliseconds: 400),
-                            curve: Curves.easeInOut,
-                            padding: const EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.surface,
-                              borderRadius: BorderRadius.circular(18),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Theme.of(context)
-                                      .shadowColor
-                                      .withOpacity(0.08),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: Column(
-                              children: [
-                                _selectedTime == null
-                                    ? ElevatedButton.icon(
-                                        icon: const Icon(Icons.access_time),
-                                        label: const Text('Scegli orario'),
-                                        style: ElevatedButton.styleFrom(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 32, vertical: 16),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(12),
-                                          ),
-                                        ),
-                                        onPressed: () async {
-                                          final picked = await showTimePicker(
-                                            context: context,
-                                            initialTime: TimeOfDay.now(),
-                                            builder: (context, child) {
-                                              return MediaQuery(
-                                                data: MediaQuery.of(context)
-                                                    .copyWith(
-                                                        alwaysUse24HourFormat:
-                                                            true),
-                                                child: child!,
-                                              );
-                                            },
-                                          );
-                                          if (picked != null) {
-                                            _onTimeChanged(picked);
-                                          }
-                                        },
-                                      )
-                                    : Column(
-                                        children: [
-                                          Text(
-                                            'Orario selezionato:',
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .titleSmall,
-                                          ),
-                                          const SizedBox(height: 6),
-                                          Card(
-                                            elevation: 2,
-                                            shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(10)),
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .primaryContainer,
-                                            child: Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                      horizontal: 24,
-                                                      vertical: 12),
-                                              child: Text(
-                                                '${_selectedTime!.hour.toString().padLeft(2, '0')}:${_selectedTime!.minute.toString().padLeft(2, '0')}',
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .displayMedium
-                                                    ?.copyWith(
-                                                      color: Theme.of(context)
-                                                          .colorScheme
-                                                          .onPrimaryContainer,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                    ),
-                                              ),
-                                            ),
-                                          ),
-                                          const SizedBox(height: 10),
-                                          TimePicker(
-                                            initialTime: _selectedTime!,
-                                            onTimeChanged: _onTimeChanged,
-                                          ),
-                                        ],
-                                      ),
-                                const SizedBox(height: 20),
-                                AnimatedCrossFade(
-                                  duration: const Duration(milliseconds: 400),
-                                  crossFadeState: (_showSleepCalculator &&
-                                          _selectedTime != null)
-                                      ? CrossFadeState.showFirst
-                                      : CrossFadeState.showSecond,
-                                  firstChild: Column(
-                                    children: [
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Text(
-                                            'Calcolatore del Sonno',
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .titleMedium,
-                                          ),
-                                          IconButton(
-                                            icon: const Icon(
-                                                Icons.keyboard_arrow_up),
-                                            tooltip: 'Nascondi',
-                                            onPressed: () {
-                                              setState(() {
-                                                _showSleepCalculator = false;
-                                              });
-                                            },
-                                          ),
-                                        ],
-                                      ),
-                                      if (_selectedTime != null)
-                                        SleepCalculator(
-                                            timeToCalculate: _selectedTime!),
-                                    ],
-                                  ),
-                                  secondChild: _selectedTime != null
-                                      ? IconButton(
-                                          icon: const Icon(
-                                              Icons.keyboard_arrow_down),
-                                          tooltip:
-                                              'Mostra calcolatore del sonno',
-                                          onPressed: () {
-                                            setState(() {
-                                              _showSleepCalculator = true;
-                                            });
-                                          },
-                                        )
-                                      : const SizedBox.shrink(),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 32),
-                          Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 8.0),
-                            child: Text(
-                              'Tutte le funzionalità qui presenti sono in fase di testing, usale con cautela, a tuo rischio',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontStyle: FontStyle.italic,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurface
-                                    .withOpacity(0.7),
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                      return mainContent;
-                    },
-                  ),
-                ),
-              ),
-      ),
-    );
-  }
-}
-
-class TimePicker extends StatelessWidget {
-  final TimeOfDay initialTime;
-  final ValueChanged<TimeOfDay> onTimeChanged;
-
-  const TimePicker({
-    super.key,
-    required this.initialTime,
-    required this.onTimeChanged,
-  });
-
-  Future<void> _selectTime(BuildContext context) async {
-    final TimeOfDay? picked = await showTimePicker(
-      context: context,
-      initialTime: initialTime,
-      builder: (context, child) {
-        return MediaQuery(
-          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
-          child: child!,
-        );
-      },
-    );
-    if (picked != null && picked != initialTime) {
-      onTimeChanged(picked);
-    }
-  }
-
-  String _formatTime(TimeOfDay time) {
-    final hour = time.hour.toString().padLeft(2, '0');
-    final minute = time.minute.toString().padLeft(2, '0');
-    return '$hour:$minute';
-  }
+        SleepCalculatorTab(
+          selectedTime: _selectedTime,
+          showSleepCalculator: _showSleepCalculator,
+          onTimeChanged: _onTimeChanged,
+        ),
+        UpdatesTab(
+          releaseHistory: _releaseHistory,
+          onCheckUpdate: _checkForUpdates,
+          updateResult: _updateResult,
+        ),
+        InfoTab(
+          themeMode: widget.themeMode,
+          onThemeModeChanged: widget.onThemeModeChanged,
+          onShowVersionInfo: _showVersionInfo,
+        ),
+      ];
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant,
-        borderRadius: BorderRadius.circular(12),
+    return NavigationView(
+      appBar: NavigationAppBar(
+        title: const Text('SleepTrack'),
+        actions: Row(
+          children: [
+            IconButton(
+              icon: const Icon(FluentIcons.info),
+              onPressed: _showVersionInfo,
+            ),
+          ],
+        ),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            'Selettore Orario',
-            style: Theme.of(context).textTheme.headlineSmall,
+      content: TabView(
+        currentIndex: _currentIndex,
+        onChanged: (i) => setState(() => _currentIndex = i),
+        tabs: [
+          Tab(
+            text: const Text('Dashboard'),
+            icon: const Icon(FluentIcons.home),
+            body: DashboardTab(
+              updateResult: _updateResult,
+              isDownloading: _isDownloading,
+              downloadProgress: _downloadProgress,
+              updateStatus: _updateStatus,
+              onCheckUpdate: _checkForUpdates,
+              onShowVersionInfo: _showVersionInfo,
+            ),
           ),
-          const SizedBox(height: 24),
-          Text(
-            _formatTime(initialTime),
-            style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
+          Tab(
+            text: const Text('Calcolatore Sonno'),
+            icon: const Icon(FluentIcons.clock),
+            body: SleepCalculatorTab(
+              selectedTime: _selectedTime,
+              showSleepCalculator: _showSleepCalculator,
+              onTimeChanged: _onTimeChanged,
+            ),
           ),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-            onPressed: () => _selectTime(context),
-            icon: const Icon(Icons.edit),
-            label: const Text('Cambia Orario'),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          Tab(
+            text: const Text('Aggiornamenti'),
+            icon: const Icon(FluentIcons.sync),
+            body: UpdatesTab(
+              releaseHistory: _releaseHistory,
+              onCheckUpdate: _checkForUpdates,
+              updateResult: _updateResult,
+            ),
+          ),
+          Tab(
+            text: const Text('Info'),
+            icon: const Icon(FluentIcons.info),
+            body: InfoTab(
+              themeMode: widget.themeMode,
+              onThemeModeChanged: widget.onThemeModeChanged,
+              onShowVersionInfo: _showVersionInfo,
             ),
           ),
         ],
@@ -704,259 +359,163 @@ class TimePicker extends StatelessWidget {
   }
 }
 
-class SleepCalculator extends StatefulWidget {
-  final TimeOfDay timeToCalculate;
+// --- TABS ---
 
-  const SleepCalculator({super.key, required this.timeToCalculate});
-
-  @override
-  State<SleepCalculator> createState() => _SleepCalculatorState();
-}
-
-class _SleepCalculatorState extends State<SleepCalculator> {
-  List<TimeOfDay> _results = [];
-  String _calculationType = '';
-  final int _sleepCycleMinutes = 90;
-  final int _fallAsleepMinutes = 15;
-
-  void _calculateWakeUpTimes() {
-    setState(() {
-      _calculationType = 'Sveglia';
-      _results.clear();
-      DateTime bedTime = _timeOfDayToDateTime(widget.timeToCalculate);
-      DateTime fallAsleepTime =
-          bedTime.add(Duration(minutes: _fallAsleepMinutes));
-
-      for (int i = 6; i >= 3; i--) {
-        final wakeUpTime =
-            fallAsleepTime.add(Duration(minutes: _sleepCycleMinutes * i));
-        _results.add(TimeOfDay.fromDateTime(wakeUpTime));
-      }
-    });
-  }
-
-  void _calculateBedTimes() {
-    setState(() {
-      _calculationType = 'Dormire';
-      _results.clear();
-      DateTime wakeUpTime = _timeOfDayToDateTime(widget.timeToCalculate);
-
-      for (int i = 6; i >= 3; i--) {
-        final bedTime =
-            wakeUpTime.subtract(Duration(minutes: _sleepCycleMinutes * i));
-        _results.add(TimeOfDay.fromDateTime(bedTime));
-      }
-    });
-  }
-
-  DateTime _timeOfDayToDateTime(TimeOfDay time) {
-    final now = DateTime.now();
-    return DateTime(now.year, now.month, now.day, time.hour, time.minute);
-  }
-
-  String _formatTime(TimeOfDay time) {
-    final hour = time.hour.toString().padLeft(2, '0');
-    final minute = time.minute.toString().padLeft(2, '0');
-    return '$hour:$minute';
-  }
-
-  Future<void> _showAlarmDialog() async {
-    if (_results.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Prima calcola gli orari!')),
-      );
-      return;
-    }
-
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Imposta Sveglia'),
-        content: const Text('Vuoi aggiungere una sveglia?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('No'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Sì'),
-          ),
-        ],
-      ),
-    );
-
-    if (result == true) {
-      _showTimeSelectionDialog();
-    }
-  }
-
-  Future<void> _showTimeSelectionDialog() async {
-    final selectedTime = await showDialog<TimeOfDay>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Scegli Orario'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: _results.length,
-            itemBuilder: (context, index) {
-              final time = _results[index];
-              return ListTile(
-                leading: Icon(
-                  _calculationType == 'Sveglia'
-                      ? Icons.alarm_on
-                      : Icons.bedtime,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                title: Text(
-                  _formatTime(time),
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-                onTap: () => Navigator.of(context).pop(time),
-              );
-            },
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Annulla'),
-          ),
-        ],
-      ),
-    );
-
-    if (selectedTime != null) {
-      await _setAlarm(selectedTime);
-    }
-  }
-
-  Future<void> _setAlarm(TimeOfDay time) async {
-    const clockAppPackage = 'com.google.android.deskclock';
-    final isInstalled = await InstalledApps.isAppInstalled(clockAppPackage);
-
-    if (isInstalled != true) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-              'Per impostare la sveglia è necessaria l\'app Google Orologio.'),
-        ),
-      );
-      return;
-    }
-
-    final now = DateTime.now();
-    final alarmTime =
-        DateTime(now.year, now.month, now.day, time.hour, time.minute);
-
-    final intent = AndroidIntent(
-      action: 'android.intent.action.SET_ALARM',
-      arguments: <String, dynamic>{
-        'android.intent.extra.alarm.HOUR': time.hour,
-        'android.intent.extra.alarm.MINUTES': time.minute,
-        'android.intent.extra.alarm.MESSAGE': 'Sveglia da Sleep Calculator',
-        'android.intent.extra.alarm.SKIP_UI': false,
-      },
-    );
-
-    try {
-      await intent.launch();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content:
-              Text('Apertura di Google Orologio per impostare la sveglia...'),
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Impossibile aprire Google Orologio: ${e.toString()}'),
-        ),
-      );
-    }
-  }
-
+class DashboardTab extends StatelessWidget {
+  final UpdateResult? updateResult;
+  final bool isDownloading;
+  final double downloadProgress;
+  final String updateStatus;
+  final VoidCallback onCheckUpdate;
+  final VoidCallback onShowVersionInfo;
+  const DashboardTab({
+    super.key,
+    required this.updateResult,
+    required this.isDownloading,
+    required this.downloadProgress,
+    required this.updateStatus,
+    required this.onCheckUpdate,
+    required this.onShowVersionInfo,
+  });
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant,
-        borderRadius: BorderRadius.circular(12),
-      ),
+    return Center(
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Text(
-            'Calcolatore del Sonno',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          Text('Benvenuto in SleepTrack!',
+              style: FluentTheme.of(context).typography.title),
+          const SizedBox(height: 16),
+          InfoBar(
+            title: Text(updateResult?.isUpdateAvailable == true
+                ? 'Aggiornamento disponibile!'
+                : 'App aggiornata'),
+            severity: updateResult?.isUpdateAvailable == true
+                ? InfoBarSeverity.warning
+                : InfoBarSeverity.success,
+            action: updateResult?.isUpdateAvailable == true
+                ? Button(
+                    child: const Text('Aggiorna'), onPressed: onCheckUpdate)
+                : null,
+          ),
+          if (isDownloading) ...[
+            const SizedBox(height: 16),
+            ProgressBar(value: downloadProgress > 0 ? downloadProgress : null),
+            const SizedBox(height: 8),
+            Text(updateStatus),
+          ],
+          const SizedBox(height: 24),
+          Button(
+              child: const Text('Controlla Aggiornamenti'),
+              onPressed: onCheckUpdate),
+          const SizedBox(height: 8),
+          Button(child: const Text('Info App'), onPressed: onShowVersionInfo),
+        ],
+      ),
+    );
+  }
+}
+
+class SleepCalculatorTab extends StatelessWidget {
+  final material.TimeOfDay? selectedTime;
+  final bool showSleepCalculator;
+  final ValueChanged<material.TimeOfDay> onTimeChanged;
+  const SleepCalculatorTab(
+      {super.key,
+      required this.selectedTime,
+      required this.showSleepCalculator,
+      required this.onTimeChanged});
+  @override
+  Widget build(BuildContext context) {
+    // Qui puoi incollare la UI del calcolatore sonno già pronta, adattata a Fluent UI
+    return Center(child: Text('Calcolatore Sonno qui!'));
+  }
+}
+
+class UpdatesTab extends StatelessWidget {
+  final List<Map<String, dynamic>> releaseHistory;
+  final VoidCallback onCheckUpdate;
+  final UpdateResult? updateResult;
+  const UpdatesTab(
+      {super.key,
+      required this.releaseHistory,
+      required this.onCheckUpdate,
+      required this.updateResult});
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Storico Aggiornamenti',
+              style: FluentTheme.of(context).typography.subtitle),
+          const SizedBox(height: 12),
+          Expanded(
+            child: ListView.builder(
+              itemCount: releaseHistory.length,
+              itemBuilder: (context, index) {
+                final rel = releaseHistory[index];
+                return InfoBar(
+                  title: Text(rel['tag_name'] ?? ''),
+                  content: Text(rel['name'] ?? ''),
+                  severity: InfoBarSeverity.info,
+                );
+              },
+            ),
           ),
           const SizedBox(height: 16),
+          Button(
+              child: const Text('Controlla Aggiornamenti'),
+              onPressed: onCheckUpdate),
+        ],
+      ),
+    );
+  }
+}
+
+class InfoTab extends StatelessWidget {
+  final ThemeMode themeMode;
+  final ValueChanged<ThemeMode> onThemeModeChanged;
+  final VoidCallback onShowVersionInfo;
+  const InfoTab(
+      {super.key,
+      required this.themeMode,
+      required this.onThemeModeChanged,
+      required this.onShowVersionInfo});
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Impostazioni',
+              style: FluentTheme.of(context).typography.subtitle),
+          const SizedBox(height: 16),
+          Text('Tema:'),
+          const SizedBox(height: 8),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              ElevatedButton(
-                onPressed: _calculateBedTimes,
-                child: const Text('Sonno'),
+              RadioButton(
+                checked: themeMode == ThemeMode.system,
+                onChanged: (_) => onThemeModeChanged(ThemeMode.system),
+                content: const Text('Sistema'),
               ),
-              ElevatedButton(
-                onPressed: _calculateWakeUpTimes,
-                child: const Text('Sveglia'),
+              RadioButton(
+                checked: themeMode == ThemeMode.light,
+                onChanged: (_) => onThemeModeChanged(ThemeMode.light),
+                content: const Text('Chiaro'),
+              ),
+              RadioButton(
+                checked: themeMode == ThemeMode.dark,
+                onChanged: (_) => onThemeModeChanged(ThemeMode.dark),
+                content: const Text('Scuro'),
               ),
             ],
           ),
-          if (_results.isNotEmpty) ...[
-            Padding(
-              padding: const EdgeInsets.only(top: 20.0),
-              child: Column(
-                children: [
-                  Text(
-                    _calculationType == 'Sveglia'
-                        ? 'Dovresti svegliarti in uno di questi orari:'
-                        : 'Dovresti andare a letto in uno di questi orari:',
-                    style: const TextStyle(fontWeight: FontWeight.w500),
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8.0,
-                    runSpacing: 8.0,
-                    alignment: WrapAlignment.center,
-                    children: _results.map((time) {
-                      return Chip(
-                        avatar: Icon(
-                          _calculationType == 'Sveglia'
-                              ? Icons.alarm_on
-                              : Icons.bedtime,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                        label: Text(
-                          _formatTime(time),
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    onPressed: _showAlarmDialog,
-                    icon: const Icon(Icons.alarm_add),
-                    label: const Text('Imposta Sveglia'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+          const SizedBox(height: 24),
+          Button(child: const Text('Info App'), onPressed: onShowVersionInfo),
         ],
       ),
     );
