@@ -73,6 +73,7 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
   String _updateStatus = '';
   TimeOfDay _selectedTime = TimeOfDay.now();
   Map<String, dynamic>? _pendingUpdateRelease;
+  bool _showSleepCalculator = false;
 
   @override
   void initState() {
@@ -269,6 +270,13 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
     );
   }
 
+  void _onTimeChanged(TimeOfDay newTime) {
+    setState(() {
+      _selectedTime = newTime;
+      _showSleepCalculator = true;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -363,14 +371,43 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
                 children: [
                   TimePicker(
                     initialTime: _selectedTime,
-                    onTimeChanged: (newTime) {
-                      setState(() {
-                        _selectedTime = newTime;
-                      });
-                    },
+                    onTimeChanged: _onTimeChanged,
                   ),
                   const SizedBox(height: 20),
-                  SleepCalculator(timeToCalculate: _selectedTime),
+                  if (_showSleepCalculator)
+                    Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Calcolatore del Sonno',
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.keyboard_arrow_up),
+                              tooltip: 'Nascondi',
+                              onPressed: () {
+                                setState(() {
+                                  _showSleepCalculator = false;
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                        SleepCalculator(timeToCalculate: _selectedTime),
+                      ],
+                    )
+                  else
+                    IconButton(
+                      icon: const Icon(Icons.keyboard_arrow_down),
+                      tooltip: 'Mostra calcolatore del sonno',
+                      onPressed: () {
+                        setState(() {
+                          _showSleepCalculator = true;
+                        });
+                      },
+                    ),
                   const SizedBox(height: 24),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20.0),
