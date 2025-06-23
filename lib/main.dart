@@ -610,6 +610,8 @@ class _DashboardTabState extends State<DashboardTab> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              Image.asset('assets/icon/icon.png', width: 96, height: 96),
+              const SizedBox(height: 24),
               Text(_displayedText,
                   style: FluentTheme.of(context)
                       .typography
