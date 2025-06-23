@@ -163,4 +163,19 @@ class UpdateService {
       return false;
     }
   }
+
+  /// Recupera tutte le release da GitHub
+  Future<List<Map<String, dynamic>>> fetchAllReleases() async {
+    final dio = Dio();
+    if (githubToken.isNotEmpty) {
+      dio.options.headers['authorization'] = 'token $githubToken';
+    }
+    final response = await dio.get(
+      'https://api.github.com/repos/$githubOwner/$githubRepo/releases',
+    );
+    if (response.statusCode == 200) {
+      return (response.data as List<dynamic>).cast<Map<String, dynamic>>();
+    }
+    throw Exception('Impossibile recuperare le release da GitHub');
+  }
 }

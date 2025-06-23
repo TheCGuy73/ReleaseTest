@@ -155,6 +155,13 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('Dopo'),
           ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _showDowngradeDialog(currentVersion);
+            },
+            child: const Text('Downgrade'),
+          ),
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
@@ -164,6 +171,67 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
           ),
         ],
       ),
+    );
+  }
+
+  void _showDowngradeDialog(String currentVersion) async {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) {
+        return FutureBuilder<List<Map<String, dynamic>>>(
+          future: _updateService.fetchAllReleases(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const AlertDialog(
+                title: Text('Downgrade'),
+                content: SizedBox(
+                  height: 80,
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              );
+            }
+            if (snapshot.hasError) {
+              return AlertDialog(
+                title: const Text('Downgrade'),
+                content: Text('Errore: ${snapshot.error}'),
+              );
+            }
+            final releases = snapshot.data ?? [];
+            final previousReleases = releases.where((r) {
+              final tag = r['tag_name'] ?? '';
+              return tag != currentVersion;
+            }).toList();
+            if (previousReleases.isEmpty) {
+              return const AlertDialog(
+                title: Text('Downgrade'),
+                content: Text('Nessuna versione precedente trovata.'),
+              );
+            }
+            return AlertDialog(
+              title: const Text('Seleziona versione per il downgrade'),
+              content: SizedBox(
+                width: 300,
+                height: 300,
+                child: ListView.builder(
+                  itemCount: previousReleases.length,
+                  itemBuilder: (context, index) {
+                    final rel = previousReleases[index];
+                    return ListTile(
+                      title: Text(rel['tag_name'] ?? ''),
+                      subtitle: Text(rel['name'] ?? ''),
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        _initiateUpdateProcess(rel);
+                      },
+                    );
+                  },
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
