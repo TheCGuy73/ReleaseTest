@@ -947,13 +947,79 @@ class _SleepCalculatorTabState extends State<SleepCalculatorTab> {
                             .title
                             ?.copyWith(fontSize: widget.getTitleSize)),
                     const SizedBox(height: 24),
-                    Text(
-                      'Contenuto in arrivo...',
-                      style: TextStyle(fontSize: widget.getTextSize),
+                    Button(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(FluentIcons.clock, size: 32),
+                          const SizedBox(width: 12),
+                          Text(
+                              _selectedTime == null
+                                  ? 'Scegli orario'
+                                  : 'Orario: ${_formatTime(_selectedTime!)}',
+                              style: const TextStyle(fontSize: 22)),
+                        ],
+                      ),
+                      onPressed: () => _selectTime(context),
+                      style: ButtonStyle(
+                          padding: ButtonState.all(widget.getButtonPadding)),
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Button(
+                          child: Text('Calcola Sonno',
+                              style: TextStyle(
+                                  fontSize: widget.getButtonTextSize)),
+                          onPressed:
+                              _selectedTime == null ? null : _calculateBedTimes,
+                          style: ButtonStyle(
+                              padding:
+                                  ButtonState.all(widget.getButtonPadding)),
+                        ),
+                        const SizedBox(width: 24),
+                        Button(
+                          child: Text('Calcola Sveglia',
+                              style: TextStyle(
+                                  fontSize: widget.getButtonTextSize)),
+                          onPressed: _selectedTime == null
+                              ? null
+                              : _calculateWakeUpTimes,
+                          style: ButtonStyle(
+                              padding:
+                                  ButtonState.all(widget.getButtonPadding)),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
+              const SizedBox(height: 32),
+              if (_results.isNotEmpty) ...[
+                Text(
+                  _calculationType == 'Sveglia'
+                      ? 'Dovresti svegliarti in uno di questi orari:'
+                      : 'Dovresti andare a letto in uno di questi orari:',
+                  style: FluentTheme.of(context)
+                      .typography
+                      .subtitle
+                      ?.copyWith(fontSize: widget.getButtonTextSize),
+                ),
+                const SizedBox(height: 16),
+                Column(
+                  children: _results
+                      .map((t) => Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            child: InfoBar(
+                              title: Text(_formatTime(t),
+                                  style: const TextStyle(fontSize: 20)),
+                              severity: InfoBarSeverity.info,
+                            ),
+                          ))
+                      .toList(),
+                ),
+              ],
             ],
           ),
         ),
