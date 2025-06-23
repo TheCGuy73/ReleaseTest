@@ -71,7 +71,7 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
   bool _isDownloading = false;
   double _downloadProgress = 0.0;
   String _updateStatus = '';
-  TimeOfDay _selectedTime = TimeOfDay.now();
+  TimeOfDay? _selectedTime;
   Map<String, dynamic>? _pendingUpdateRelease;
   bool _showSleepCalculator = false;
 
@@ -369,12 +369,33 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
             : Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  TimePicker(
-                    initialTime: _selectedTime,
-                    onTimeChanged: _onTimeChanged,
-                  ),
+                  _selectedTime == null
+                      ? ElevatedButton.icon(
+                          icon: const Icon(Icons.access_time),
+                          label: const Text('Scegli orario'),
+                          onPressed: () async {
+                            final picked = await showTimePicker(
+                              context: context,
+                              initialTime: TimeOfDay.now(),
+                              builder: (context, child) {
+                                return MediaQuery(
+                                  data: MediaQuery.of(context)
+                                      .copyWith(alwaysUse24HourFormat: true),
+                                  child: child!,
+                                );
+                              },
+                            );
+                            if (picked != null) {
+                              _onTimeChanged(picked);
+                            }
+                          },
+                        )
+                      : TimePicker(
+                          initialTime: _selectedTime!,
+                          onTimeChanged: _onTimeChanged,
+                        ),
                   const SizedBox(height: 20),
-                  if (_showSleepCalculator)
+                  if (_showSleepCalculator && _selectedTime != null)
                     Column(
                       children: [
                         Row(
@@ -395,10 +416,10 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
                             ),
                           ],
                         ),
-                        SleepCalculator(timeToCalculate: _selectedTime),
+                        SleepCalculator(timeToCalculate: _selectedTime!),
                       ],
                     )
-                  else
+                  else if (_selectedTime != null)
                     IconButton(
                       icon: const Icon(Icons.keyboard_arrow_down),
                       tooltip: 'Mostra calcolatore del sonno',
