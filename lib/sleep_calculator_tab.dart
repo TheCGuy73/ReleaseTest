@@ -279,7 +279,7 @@ class _SleepCalculatorTabState extends State<SleepCalculatorTab> {
                         Text(
                             _selectedTime == null
                                 ? 'Scegli orario'
-                                : 'Orario: ${_formatTime(_selectedTime!)}',
+                                : 'Orario: ${_formatTime(_selectedTime!)}',
                             style: const TextStyle(fontSize: 22)),
                       ],
                     ),

@@ -11,7 +11,6 @@ import 'dashboard_tab.dart';
 import 'sleep_calculator_tab.dart';
 import 'updates_tab.dart';
 import 'info_tab.dart';
-import 'water_tab.dart';
 
 // Enum per la personalizzazione della UI
 enum TextSize { small, normal, large }
@@ -448,16 +447,6 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
             )),
         Tab(
             text: const SizedBox.shrink(),
-            icon: const Icon(FluentIcons.coffee),
-            body: WaterTab(
-              getTextSize: getTextSize(),
-              getTitleSize: getTitleSize(),
-              getButtonTextSize: getButtonTextSize(),
-              getIconSize: getIconSize(),
-              getButtonPadding: getButtonPadding(),
-            )),
-        Tab(
-            text: const SizedBox.shrink(),
             icon: const Icon(FluentIcons.sync),
             body: UpdatesTab(
               releaseHistory: _releaseHistory,
@@ -509,16 +498,6 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
               selectedTime: _selectedTime,
               showSleepCalculator: _showSleepCalculator,
               onTimeChanged: _onTimeChanged,
-              getTextSize: getTextSize(),
-              getTitleSize: getTitleSize(),
-              getButtonTextSize: getButtonTextSize(),
-              getIconSize: getIconSize(),
-              getButtonPadding: getButtonPadding(),
-            )),
-        Tab(
-            text: const Text('Acqua'),
-            icon: const Icon(FluentIcons.coffee),
-            body: WaterTab(
               getTextSize: getTextSize(),
               getTitleSize: getTitleSize(),
               getButtonTextSize: getButtonTextSize(),
