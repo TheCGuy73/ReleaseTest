@@ -11,7 +11,6 @@ import 'dashboard_tab.dart';
 import 'sleep_calculator_tab.dart';
 import 'updates_tab.dart';
 import 'info_tab.dart';
-import 'package:animations/animations.dart';
 
 // Enum per la personalizzazione della UI
 enum TextSize { small, normal, large }
@@ -180,7 +179,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.resumed && _pendingUpdateRelease != null) {
-      // L'utente è tornato all'app, controlla se ha concesso il permesso.
+      // L'utente Ã¨ tornato all'app, controlla se ha concesso il permesso.
       _resumeUpdateAfterPermissionRequest();
     }
   }
@@ -292,7 +291,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
         builder: (context) => material.AlertDialog(
           title: const Text('Permesso Richiesto'),
           content: const Text(
-            'Per aggiornare l\'app, è necessario autorizzare l\'installazione. Verrai reindirizzato alle impostazioni per concedere il permesso.',
+            'Per aggiornare l\'app, Ã¨ necessario autorizzare l\'installazione. Verrai reindirizzato alle impostazioni per concedere il permesso.',
           ),
           actions: [
             material.TextButton(
@@ -557,24 +556,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       content: TabView(
         currentIndex: _currentIndex,
         onChanged: (i) => setState(() => _currentIndex = i),
-        tabs: buildTabs(context).asMap().entries.map((entry) {
-          final idx = entry.key;
-          final tab = entry.value;
-          return Tab(
-            text: tab.text,
-            icon: tab.icon,
-            body: PageTransitionSwitcher(
-              duration: const Duration(milliseconds: 500),
-              transitionBuilder: (child, animation, secondaryAnimation) =>
-                  FadeThroughTransition(
-                    animation: animation,
-                    secondaryAnimation: secondaryAnimation,
-                    child: child,
-                  ),
-              child: _currentIndex == idx ? tab.body : const SizedBox.shrink(),
-            ),
-          );
-        }).toList(),
+        tabs: buildTabs(context),
       ),
     );
   }
